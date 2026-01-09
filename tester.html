@@ -1,87 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome — Coming Soon</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-                   Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-      background: linear-gradient(135deg, #f8f9fb, #eef2f7);
-      color: #1f2937;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 600px;
-      padding: 40px 30px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-
-    p {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      margin: 12px 0;
-      color: #374151;
-    }
-
-    .highlight {
-      margin-top: 24px;
-      padding: 16px;
-      background: #f3f4f6;
-      border-radius: 12px;
-      font-weight: 500;
-    }
-
-    .footer {
-      margin-top: 28px;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-
-    .emoji {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tire Medics SF - Mobile Tire Repair San Francisco</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <div class="emoji">👋</div>
-    <h1>Welcome — we're glad you're here</h1>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tools"></i>
+                <span>TireMedics<span class="logo-sf">SF</span></span>
+            </a>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/" class="active"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/book.html"><i class="fas fa-calendar-check"></i> Book Service</a></li>
+                <li><a href="/terms.html"><i class="fas fa-file-contract"></i> Terms</a></li>
+                <li><a href="tel:+15551234567"><i class="fas fa-phone"></i> Call Now</a></li>
+            </ul>
+        </div>
+    </nav>
 
-    <p>
-      This site is currently <strong>under construction</strong>, and something
-      thoughtful is being put together behind the scenes.
-    </p>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Emergency Mobile Tire Repair in San Francisco</h1>
+                <p class="hero-subtitle">Fast, reliable on-site tire repair for passenger & light commercial vehicles</p>
+                <div class="hero-buttons">
+                    <a href="/book.html" class="btn btn-primary">
+                        <i class="fas fa-wrench"></i> Book Tire Repair Now
+                    </a>
+                    <a href="tel:+15551234567" class="btn btn-secondary">
+                        <i class="fas fa-phone"></i> (555) 123-4567
+                    </a>
+                </div>
+                <div class="hero-features">
+                    <div class="feature">
+                        <i class="fas fa-bolt"></i>
+                        <span>Fast Response</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>30-Day Warranty</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-bicycle"></i>
+                        <span>eBike Mobile</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-clock"></i>
+                        <span>7 Days/Week</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="image-placeholder">
+                    <i class="fas fa-tire-pressure-warning"></i>
+                    <p>Mobile Tire Service Image</p>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <p>
-      We believe in building things carefully, with intention and quality.
-      That takes a little time — and it’s time well spent.
-    </p>
+    <!-- How It Works -->
+    <section class="section how-it-works">
+        <div class="container">
+            <h2>How Our Service Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Book Online or Call</h3>
+                    <p>Schedule service through our website or call us directly. We'll request photos for preliminary assessment.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Technician Dispatched</h3>
+                    <p>Our technician arrives via eBike with all necessary tools for urban navigation and accessibility.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>On-Site Inspection</h3>
+                    <p>We perform a thorough in-person inspection. Only on-site assessment determines if repair is possible.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Repair or Swap</h3>
+                    <p>We repair the tire or swap with your spare. Service fee applies once technician performs on-site inspection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div class="highlight">
-      🚧 We’re working on it right now. Please check back soon.
-    </div>
+    <!-- Important Notes -->
+    <section class="section notes">
+        <div class="container">
+            <h2>Important Service Notes</h2>
+            <div class="notes-grid">
+                <div class="note-card warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Must Be Present</h3>
+                    <p>Customer or representative must be physically present to supervise service and vehicle access.</p>
+                </div>
+                <div class="note-card">
+                    <i class="fas fa-camera"></i>
+                    <h3>Body Cameras</h3>
+                    <p>Technicians wear body cameras for safety and record-keeping during service calls.</p>
+                </div>
+                <div class="note-card warning">
+                    <i class="fas fa-ban"></i>
+                    <h3>No Tire Warranty</h3>
+                    <p>We warranty our repair work for 30 days. We provide NO WARRANTY on the tire itself.</p>
+                </div>
+                <div class="note-card">
+                    <i class="fas fa-clock"></i>
+                    <h3>ETA Not Guaranteed</h3>
+                    <p>Estimated arrival times are provided in good faith but are not guaranteed due to traffic conditions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div class="footer">
-      Thank you for stopping by and for your patience.
-    </div>
-  </div>
+    <!-- CTA Section -->
+    <section class="section cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Need Tire Help Now?</h2>
+                <p>Our mobile team is ready to assist you anywhere in San Francisco.</p>
+                <div class="cta-buttons">
+                    <a href="/book.html" class="btn btn-primary btn-large">
+                        <i class="fas fa-calendar-plus"></i> Schedule Service
+                    </a>
+                    <a href="/terms.html" class="btn btn-outline">
+                        <i class="fas fa-file-alt"></i> View Terms of Service
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <i class="fas fa-tools"></i>
+                        <span>TireMedics<span class="logo-sf">SF</span></span>
+                    </a>
+                    <p>Golden Gate Blooms LLC</p>
+                    <p>Mobile Tire Repair Service</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/book.html">Book Service</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-globe"></i> tiremedicsf.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Serving San Francisco Area</p>
+                    <p><i class="fas fa-clock"></i> 7 Days a Week</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Golden Gate Blooms LLC. All rights reserved.</p>
+                <p>Last Updated: January 9, 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
-
