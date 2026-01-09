@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Record - Tire Medics SF</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tire-pressure-warning"></i>
+                <span>TireMedics<span class="logo-sf">SF</span></span>
+            </a>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/service-record.html" class="active"><i class="fas fa-clipboard-check"></i> Service Record</a></li>
+                <li><a href="/terms.html"><i class="fas fa-file-contract"></i> Terms</a></li>
+                <li><a href="/privacy.html"><i class="fas fa-shield-alt"></i> Privacy</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Service Record Header -->
+    <header class="record-header">
+        <div class="container">
+            <h1><i class="fas fa-clipboard-check"></i> Service Record</h1>
+            <p>Complete this form upon technician arrival</p>
+            <div class="record-notice">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>This form documents service details and customer agreement</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Service Record Form -->
+    <main class="record-form">
+        <div class="container">
+            <form id="serviceRecordForm">
+                <!-- Section 1: Service Details -->
+                <div class="record-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-calendar-day"></i> Service Details</h2>
+                        <div class="service-date-auto">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Date: <span id="autoDate">Loading...</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="streetAddress">Street Address *</label>
+                            <input type="text" id="streetAddress" name="streetAddress" required 
+                                   placeholder="123 Main Street">
+                        </div>
+                        <div class="form-group">
+                            <label for="cityState">City & State *</label>
+                            <input type="text" id="cityState" name="cityState" required 
+                                   value="San Francisco, CA" readonly class="readonly-field">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="customerType">Customer/Representative *</label>
+                            <select id="customerType" name="customerType" required>
+                                <option value="">Select relationship</option>
+                                <option value="owner">Vehicle Owner</option>
+                                <option value="household">Household Member</option>
+                                <option value="representative">Authorized Representative</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" name="firstName" required 
+                                   placeholder="John">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="plateState">Plate State *</label>
+                            <select id="plateState" name="plateState" required>
+                                <option value="">Select state</option>
+                                <option value="CA" selected>California</option>
+                                <option value="NV">Nevada</option>
+                                <option value="OR">Oregon</option>
+                                <option value="AZ">Arizona</option>
+                                <option value="WA">Washington</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="plateNumber">Plate Number *</label>
+                            <input type="text" id="plateNumber" name="plateNumber" required 
+                                   placeholder="ABC123" class="uppercase-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Wheel Inspection -->
+                <div class="record-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-search"></i> Wheel Inspection</h2>
+                        <p class="section-subtitle">Inspect wheel(s) with flat tire only</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Which wheel(s) have flat tire? *</label>
+                        <div class="wheel-selection">
+                            <div class="wheel-diagram">
+                                <div class="diagram-grid">
+                                    <div class="wheel-option" data-wheel="front-left">
+                                        <div class="wheel-box">
+                                            <i class="fas fa-tire"></i>
+                                            <span>Front Left</span>
+                                        </div>
+                                        <input type="checkbox" id="frontLeft" name="wheels" value="front-left">
+                                    </div>
+                                    <div class="wheel-option" data-wheel="front-right">
+                                        <div class="wheel-box">
+                                            <i class="fas fa-tire"></i>
+                                            <span>Front Right</span>
+                                        </div>
+                                        <input type="checkbox" id="frontRight" name="wheels" value="front-right">
+                                    </div>
+                                    <div class="wheel-option" data-wheel="rear-left">
+                                        <div class="wheel-box">
+                                            <i class="fas fa-tire"></i>
+                                            <span>Rear Left</span>
+                                        </div>
+                                        <input type="checkbox" id="rearLeft" name="wheels" value="rear-left">
+                                    </div>
+                                    <div class="wheel-option" data-wheel="rear-right">
+                                        <div class="wheel-box">
+                                            <i class="fas fa-tire"></i>
+                                            <span>Rear Right</span>
+                                        </div>
+                                        <input type="checkbox" id="rearRight" name="wheels" value="rear-right">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Wheel Condition</label>
+                        <div class="condition-checkboxes">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="scratches" name="condition" value="scratches">
+                                <label for="scratches">Scratches on rim</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="damage" name="condition" value="damage">
+                                <label for="damage">Damage to rim</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="curbDamage" name="condition" value="curbDamage">
+                                <label for="curbDamage">Curb damage</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="corrosion" name="condition" value="corrosion">
+                                <label for="corrosion">Corrosion present</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wheelNotes">Additional Wheel Notes</label>
+                        <textarea id="wheelNotes" name="wheelNotes" rows="3" 
+                                  placeholder="Describe any pre-existing damage or special conditions..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Wheel Photos</label>
+                        <p class="form-help">Take photos of each flat tire wheel to document condition</p>
+                        <div class="photo-upload-area">
+                            <div class="photo-instructions">
+                                <i class="fas fa-camera"></i>
+                                <p>Take clear photos showing:</p>
+                                <ul>
+                                    <li>Tire damage location</li>
+                                    <li>Wheel/rim condition</li>
+                                    <li>Overall wheel state</li>
+                                </ul>
+                            </div>
+                            <div class="file-upload">
+                                <input type="file" id="wheelPhotos" name="wheelPhotos" accept="image/*" multiple 
+                                       capture="environment">
+                                <label for="wheelPhotos" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Take or upload photos</span>
+                                </label>
+                            </div>
+                            <div class="photo-preview" id="photoPreview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Agreement & Signature -->
+                <div class="record-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-file-signature"></i> Agreement & Signature</h2>
+                    </div>
+
+                    <div class="agreement-box">
+                        <div class="agreement-content">
+                            <h3><i class="fas fa-check-circle"></i> Terms of Service Acknowledgement</h3>
+                            <p>I have received, read, and agree to the:</p>
+                            <div class="agreement-links">
+                                <a href="/terms.html" target="_blank" class="agreement-link">
+                                    <i class="fas fa-external-link-alt"></i> Terms of Service
+                                </a>
+                                <a href="/privacy.html" target="_blank" class="agreement-link">
+                                    <i class="fas fa-external-link-alt"></i> Privacy Policy
+                                </a>
+                            </div>
+                            <p>I acknowledge and agree to the terms including but not limited to:</p>
+                            <ul class="agreement-points">
+                                <li>Service fee applies upon on-site inspection</li>
+                                <li>Must be present to supervise service</li>
+                                <li>Technicians wear body cameras</li>
+                                <li>30-day repair warranty only (no tire warranty)</li>
+                                <li>ETA is estimate, not guaranteed</li>
+                            </ul>
+                        </div>
+
+                        <div class="signature-area">
+                            <div class="form-group">
+                                <label for="customerInitials">Customer Initials *</label>
+                                <input type="text" id="customerInitials" name="customerInitials" required 
+                                       placeholder="JD" class="uppercase-input" maxlength="3">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="signature">Signature *</label>
+                                <div class="signature-pad">
+                                    <canvas id="signatureCanvas" width="400" height="150"></canvas>
+                                    <div class="signature-actions">
+                                        <button type="button" id="clearSignature" class="btn-clear">
+                                            <i class="fas fa-eraser"></i> Clear
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="signatureData" name="signatureData">
+                                </div>
+                            </div>
+
+                            <div class="signature-confirm">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="signatureConfirm" name="signatureConfirm" required>
+                                    <label for="signatureConfirm">
+                                        I certify this is my legal signature and I agree to all terms *
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="form-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>By submitting, you agree this is a binding service record</p>
+                    </div>
+                    <button type="submit" class="btn-record-submit">
+                        <i class="fas fa-check-double"></i> Complete Service Record
+                    </button>
+                    <button type="button" id="printForm" class="btn-print">
+                        <i class="fas fa-print"></i> Print for Records
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <i class="fas fa-tire-pressure-warning"></i>
+                        <span>TireMedics<span class="logo-sf">SF</span></span>
+                    </a>
+                    <p>Golden Gate Blooms LLC</p>
+                    <p>Emergency Mobile Tire Repair</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/service-record.html">Service Record</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Emergency Contact</h4>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                    <p><i class="fas fa-globe"></i> tiremedicsf.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> San Francisco, CA</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Golden Gate Blooms LLC. All rights reserved.</p>
+                <p>Last Updated: January 9, 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <!-- Future modular JS files -->
+    <!-- <script src="js/service-record.js"></script> -->
+    <!-- <script src="js/signature.js"></script> -->
+</body>
+</html>
