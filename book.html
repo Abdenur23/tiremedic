@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Service - Tire Medics SF</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tools"></i>
+                <span>TireMedics<span class="logo-sf">SF</span></span>
+            </a>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/book.html" class="active"><i class="fas fa-calendar-check"></i> Book Service</a></li>
+                <li><a href="/terms.html"><i class="fas fa-file-contract"></i> Terms</a></li>
+                <li><a href="tel:+15551234567"><i class="fas fa-phone"></i> Call Now</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Booking Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-calendar-plus"></i> Book Tire Service</h1>
+            <p>Fill out the form below to schedule mobile tire repair</p>
+            <div class="booking-notice">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Please review our <a href="/terms.html">Terms of Service</a> before booking</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Booking Form -->
+    <main class="booking-form">
+        <div class="container">
+            <div class="form-container">
+                <form id="serviceBookingForm">
+                    <div class="form-section">
+                        <h3><i class="fas fa-user"></i> Customer Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fullName">Full Name *</label>
+                                <input type="text" id="fullName" name="fullName" required placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required placeholder="(555) 123-4567">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" placeholder="john@example.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-car"></i> Vehicle Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="vehicleMake">Vehicle Make *</label>
+                                <input type="text" id="vehicleMake" name="vehicleMake" required placeholder="Toyota">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicleModel">Vehicle Model *</label>
+                                <input type="text" id="vehicleModel" name="vehicleModel" required placeholder="Camry">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicleYear">Year</label>
+                                <input type="number" id="vehicleYear" name="vehicleYear" min="1990" max="2026" placeholder="2020">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tireIssue">Describe Tire Issue *</label>
+                            <textarea id="tireIssue" name="tireIssue" rows="3" required placeholder="Flat tire from nail, slow leak, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-map-marker-alt"></i> Service Location</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="address">Street Address *</label>
+                                <input type="text" id="address" name="address" required placeholder="123 Main St">
+                            </div>
+                            <div class="form-group">
+                                <label for="city">City *</label>
+                                <input type="text" id="city" name="city" required value="San Francisco" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="zipCode">ZIP Code *</label>
+                                <input type="text" id="zipCode" name="zipCode" required placeholder="94102">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="locationNotes">Location Notes</label>
+                            <textarea id="locationNotes" name="locationNotes" rows="2" placeholder="Near cross street, parking instructions, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-camera"></i> Tire Photos (Optional)</h3>
+                        <p class="form-help">Uploading photos helps us provide preliminary advice. Final assessment requires in-person inspection.</p>
+                        <div class="form-group">
+                            <label for="tirePhotos">Upload Tire Photos</label>
+                            <div class="file-upload">
+                                <input type="file" id="tirePhotos" name="tirePhotos" accept="image/*" multiple>
+                                <label for="tirePhotos" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose files or drag here</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-calendar-day"></i> Service Timing</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="serviceDate">Preferred Date *</label>
+                                <input type="date" id="serviceDate" name="serviceDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="serviceTime">Preferred Time Window *</label>
+                                <select id="serviceTime" name="serviceTime" required>
+                                    <option value="">Select time window</option>
+                                    <option value="morning">Morning (8 AM - 12 PM)</option>
+                                    <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
+                                    <option value="evening">Evening (4 PM - 8 PM)</option>
+                                    <option value="asap">ASAP / Emergency</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="notice-box warning">
+                            <i class="fas fa-clock"></i>
+                            <p><strong>Note:</strong> ETAs are estimates, not guaranteed. We'll contact you with a more precise time.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-file-signature"></i> Terms Acknowledgement</h3>
+                        <div class="terms-agreement">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="acknowledgeTerms" name="acknowledgeTerms" required>
+                                <label for="acknowledgeTerms">
+                                    I have read and agree to the <a href="/terms.html" target="_blank">Terms of Service</a> *
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="acknowledgePresence" name="acknowledgePresence" required>
+                                <label for="acknowledgePresence">
+                                    I acknowledge I must be present to supervise the service *
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="acknowledgeBodyCam" name="acknowledgeBodyCam" required>
+                                <label for="acknowledgeBodyCam">
+                                    I acknowledge technicians wear body cameras for safety *
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="acknowledgeFee" name="acknowledgeFee" required>
+                                <label for="acknowledgeFee">
+                                    I understand the service fee applies upon on-site inspection *
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="acknowledgeNoWarranty" name="acknowledgeNoWarranty" required>
+                                <label for="acknowledgeNoWarranty">
+                                    I understand there is NO WARRANTY on the tire itself *
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-paper-plane"></i> Submit Booking Request
+                        </button>
+                        <p class="form-disclaimer">
+                            By submitting, you agree to our terms. We'll contact you shortly to confirm details.
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+            <div class="booking-sidebar">
+                <div class="sidebar-card">
+                    <h3><i class="fas fa-info-circle"></i> Important Notes</h3>
+                    <ul class="sidebar-list">
+                        <li><i class="fas fa-user-check"></i> Must be present to supervise</li>
+                        <li><i class="fas fa-camera"></i> Body cameras used for safety</li>
+                        <li><i class="fas fa-wrench"></i> 30-day repair warranty only</li>
+                        <li><i class="fas fa-ban"></i> No warranty on tire itself</li>
+                        <li><i class="fas fa-dollar-sign"></i> Fee applies on inspection</li>
+                        <li><i class="fas fa-clock"></i> ETA not guaranteed</li>
+                    </ul>
+                </div>
+                <div class="sidebar-card">
+                    <h3><i class="fas fa-phone-alt"></i> Need Help?</h3>
+                    <p>Prefer to book by phone?</p>
+                    <a href="tel:+15551234567" class="btn btn-secondary btn-block">
+                        <i class="fas fa-phone"></i> Call (555) 123-4567
+                    </a>
+                    <p class="sidebar-note">Available 7 days a week</p>
+                </div>
+                <div class="sidebar-card">
+                    <h3><i class="fas fa-shield-alt"></i> Service Details</h3>
+                    <p><strong>Service Area:</strong> San Francisco</p>
+                    <p><strong>Response Time:</strong> Typically 1-2 hours</p>
+                    <p><strong>Hours:</strong> 8 AM - 8 PM, 7 days</p>
+                    <p><strong>Transport:</strong> eBike for urban access</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <i class="fas fa-tools"></i>
+                        <span>TireMedics<span class="logo-sf">SF</span></span>
+                    </a>
+                    <p>Golden Gate Blooms LLC</p>
+                    <p>Mobile Tire Repair Service</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/book.html">Book Service</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-globe"></i> tiremedicsf.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Serving San Francisco Area</p>
+                    <p><i class="fas fa-clock"></i> 7 Days a Week</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Golden Gate Blooms LLC. All rights reserved.</p>
+                <p>Last Updated: January 9, 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <!-- Future modular JS files will be loaded here -->
+    <!-- <script src="js/booking-form.js"></script> -->
+    <!-- <script src="js/config.js"></script> -->
+</body>
+</html>
