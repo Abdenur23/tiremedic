@@ -1,332 +1,262 @@
-// Service Record API Handler
-class ServiceRecordAPI {
-    constructor() {
-        // Replace with your actual API Gateway endpoint
-        this.API_ENDPOINT = 'https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod';
-        this.API_KEY = 'your-api-key'; // Store securely in production
+// Service Record Form Handler
+document.addEventListener('DOMContentLoaded', function() {
+    // API endpoint
+    const API_ENDPOINT = 'https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod';
+    
+    // Form submission handling
+    const serviceRecordForm = document.getElementById('serviceRecordForm');
+    if (serviceRecordForm) {
+        serviceRecordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('.btn-record-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Collect form data
+                const formData = collectFormData();
+                
+                // Upload images if any
+                const wheelPhotos = document.getElementById('wheelPhotos').files;
+                if (wheelPhotos.length > 0) {
+                    formData.imageUrls = await uploadImages(wheelPhotos);
+                }
+                
+                // Submit to API
+                const response = await saveServiceRecord(formData);
+                
+                if (response.success) {
+                    showSuccess('Service record saved successfully!');
+                    
+                    // Optionally reset form or redirect
+                    setTimeout(() => {
+                        // Clear form
+                        serviceRecordForm.reset();
+                        clearPhotoPreview();
+                        resetWheelSelection();
+                        
+                        // Reset signature if exists
+                        const signatureCanvas = document.getElementById('signatureCanvas');
+                        if (signatureCanvas) {
+                            const ctx = signatureCanvas.getContext('2d');
+                            ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+                        }
+                    }, 2000);
+                } else {
+                    showError(response.message || 'Failed to save service record');
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showError('An error occurred while submitting the form');
+            } finally {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
     }
-
-    async saveRecord(formData) {
+    
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        
+        // Required fields
+        const requiredFields = [
+            'streetAddress',
+            'customerType',
+            'firstName',
+            'plateState',
+            'plateNumber',
+            'customerInitials'
+        ];
+        
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !field.value.trim()) {
+                isValid = false;
+                highlightError(field);
+            } else if (field) {
+                clearError(field);
+            }
+        });
+        
+        // Validate at least one wheel selected
+        const wheelCheckboxes = document.querySelectorAll('input[name="wheels"]:checked');
+        if (wheelCheckboxes.length === 0) {
+            isValid = false;
+            const wheelSelection = document.querySelector('.wheel-selection');
+            if (wheelSelection) {
+                wheelSelection.style.border = '2px solid var(--emergency-red)';
+                wheelSelection.style.borderRadius = 'var(--border-radius)';
+                wheelSelection.style.padding = '10px';
+            }
+        } else {
+            const wheelSelection = document.querySelector('.wheel-selection');
+            if (wheelSelection) {
+                wheelSelection.style.border = '';
+                wheelSelection.style.padding = '';
+            }
+        }
+        
+        // Validate agreement checkbox
+        const agreementCheckbox = document.getElementById('signatureConfirm');
+        if (agreementCheckbox && !agreementCheckbox.checked) {
+            isValid = false;
+            highlightError(agreementCheckbox);
+        } else if (agreementCheckbox) {
+            clearError(agreementCheckbox);
+        }
+        
+        if (!isValid) {
+            showError('Please fill in all required fields marked with *');
+        }
+        
+        return isValid;
+    }
+    
+    function highlightError(element) {
+        element.style.borderColor = 'var(--emergency-red)';
+        element.style.boxShadow = '0 0 0 3px rgba(211, 47, 47, 0.1)';
+    }
+    
+    function clearError(element) {
+        element.style.borderColor = '';
+        element.style.boxShadow = '';
+    }
+    
+    // Collect form data
+    function collectFormData() {
+        const formData = {
+            id: generateRecordId(),
+            timestamp: new Date().toISOString(),
+            serviceDate: document.getElementById('autoDate').textContent,
+            streetAddress: document.getElementById('streetAddress').value,
+            cityState: document.getElementById('cityState').value,
+            customerType: document.getElementById('customerType').value,
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName')?.value || '',
+            phoneNumber: document.getElementById('phoneNumber')?.value || '',
+            plateState: document.getElementById('plateState').value,
+            plateNumber: document.getElementById('plateNumber').value.toUpperCase(),
+            wheels: Array.from(document.querySelectorAll('input[name="wheels"]:checked'))
+                .map(cb => cb.value),
+            condition: Array.from(document.querySelectorAll('input[name="condition"]:checked'))
+                .map(cb => cb.value),
+            wheelNotes: document.getElementById('wheelNotes').value,
+            customerInitials: document.getElementById('customerInitials').value.toUpperCase(),
+            signatureConfirmed: document.getElementById('signatureConfirm').checked,
+            vehicleMake: document.getElementById('vehicleMake')?.value || '',
+            vehicleModel: document.getElementById('vehicleModel')?.value || '',
+            vehicleYear: document.getElementById('vehicleYear')?.value || '',
+            serviceType: document.getElementById('serviceType')?.value || 'flat-tire-repair',
+            technicianNotes: document.getElementById('technicianNotes')?.value || '',
+            status: 'submitted'
+        };
+        
+        return formData;
+    }
+    
+    // Generate unique record ID
+    function generateRecordId() {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 10);
+        return `SR-${timestamp}-${random}`.toUpperCase();
+    }
+    
+    // Upload images to S3 via API
+    async function uploadImages(files) {
+        const imageUrls = [];
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('recordId', generateRecordId());
+            formData.append('imageType', 'wheel-photo');
+            
+            try {
+                const response = await fetch(`${API_ENDPOINT}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    imageUrls.push(result.imageUrl);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+            }
+        }
+        
+        return imageUrls;
+    }
+    
+    // Save service record to DynamoDB
+    async function saveServiceRecord(data) {
         try {
-            const response = await fetch(this.API_ENDPOINT, {
+            const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(data)
             });
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-
+            
             return await response.json();
         } catch (error) {
-            console.error('Save failed:', error);
+            console.error('Error saving service record:', error);
             throw error;
         }
     }
-
-    prepareFormData(formElement) {
-        const formData = {
-            serviceDetails: {},
-            wheelInspection: {},
-            agreement: {},
-            metadata: {
-                submittedAt: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                screenSize: `${window.screen.width}x${window.screen.height}`
-            }
-        };
-
-        // Collect all form fields
-        const formFields = new FormData(formElement);
-        
-        // Process each field
-        for (let [key, value] of formFields.entries()) {
-            if (key === 'wheels') {
-                if (!formData.wheelInspection.wheels) formData.wheelInspection.wheels = [];
-                formData.wheelInspection.wheels.push(value);
-            } else if (key === 'condition') {
-                if (!formData.wheelInspection.conditions) formData.wheelInspection.conditions = [];
-                formData.wheelInspection.conditions.push(value);
-            } else if (key.startsWith('customer')) {
-                formData.agreement[key] = value;
-            } else if (key === 'wheelNotes') {
-                formData.wheelInspection.notes = value;
-            } else {
-                formData.serviceDetails[key] = value;
+    
+    // Clear photo preview
+    function clearPhotoPreview() {
+        const photoPreview = document.getElementById('photoPreview');
+        if (photoPreview) {
+            photoPreview.innerHTML = '';
+        }
+        const fileInput = document.getElementById('wheelPhotos');
+        if (fileInput) {
+            fileInput.value = '';
+            const label = fileInput.nextElementSibling;
+            if (label) {
+                label.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Take or upload photos</span>';
+                label.style.color = '';
             }
         }
-
-        // Add auto date
-        formData.serviceDetails.date = document.getElementById('autoDate').textContent;
-
-        return formData;
     }
-}
-
-// Form Handler
-class ServiceRecordForm {
-    constructor() {
-        this.api = new ServiceRecordAPI();
-        this.init();
-    }
-
-    init() {
-        this.setupAutoDate();
-        this.setupUppercaseInputs();
-        this.setupWheelSelection();
-        this.bindEvents();
-    }
-
-    setupAutoDate() {
-        const dateElement = document.getElementById('autoDate');
-        if (dateElement) {
-            const now = new Date();
-            dateElement.textContent = now.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-    }
-
-    setupUppercaseInputs() {
-        const inputs = document.querySelectorAll('.uppercase-input');
-        inputs.forEach(input => {
-            input.addEventListener('input', (e) => {
-                e.target.value = e.target.value.toUpperCase();
-            });
-        });
-    }
-
-    setupWheelSelection() {
+    
+    // Reset wheel selection
+    function resetWheelSelection() {
         const wheelOptions = document.querySelectorAll('.wheel-option');
         wheelOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                const checkbox = option.querySelector('input[type="checkbox"]');
-                checkbox.checked = !checkbox.checked;
-                
-                // Visual feedback
-                const wheelBox = option.querySelector('.wheel-box');
-                if (checkbox.checked) {
-                    wheelBox.style.borderColor = 'var(--emergency-red)';
-                    wheelBox.style.backgroundColor = 'var(--emergency-light)';
-                } else {
-                    wheelBox.style.borderColor = '';
-                    wheelBox.style.backgroundColor = '';
-                }
-            });
-        });
-    }
-
-    bindEvents() {
-        const form = document.getElementById('serviceRecordForm');
-        const printBtn = document.getElementById('printForm');
-
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
-        }
-
-        if (printBtn) {
-            printBtn.addEventListener('click', () => this.handlePrint());
-        }
-    }
-
-    async handleSubmit(e) {
-        e.preventDefault();
-        
-        if (!this.validateForm()) {
-            this.showMessage('Please fill in all required fields', 'error');
-            return;
-        }
-
-        try {
-            // Show loading
-            const submitBtn = document.querySelector('.btn-record-submit');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            submitBtn.disabled = true;
-
-            // Prepare and send data
-            const formData = this.api.prepareFormData(e.target);
-            const response = await this.api.saveRecord(formData);
-
-            // Success
-            this.showMessage('Service record saved successfully!', 'success');
-            this.resetForm();
-            
-            // Generate receipt/confirmation
-            this.generateConfirmation(response);
-
-        } catch (error) {
-            this.showMessage('Failed to save. Please try again.', 'error');
-            console.error('Submission error:', error);
-        } finally {
-            // Reset button
-            const submitBtn = document.querySelector('.btn-record-submit');
-            if (submitBtn) {
-                submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Complete Service Record';
-                submitBtn.disabled = false;
-            }
-        }
-    }
-
-    validateForm() {
-        let isValid = true;
-        
-        // Check required fields
-        const requiredFields = document.querySelectorAll('[required]');
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                isValid = false;
-                field.style.borderColor = 'var(--emergency-red)';
-            } else {
-                field.style.borderColor = '';
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            checkbox.checked = false;
+            const wheelBox = option.querySelector('.wheel-box');
+            wheelBox.style.borderColor = '';
+            wheelBox.style.backgroundColor = '';
+            if (wheelBox.querySelector('i')) {
+                wheelBox.querySelector('i').style.color = '';
             }
         });
-
-        // Check at least one wheel selected
-        const wheelsChecked = document.querySelectorAll('input[name="wheels"]:checked');
-        if (wheelsChecked.length === 0) {
-            isValid = false;
-            document.querySelector('.wheel-selection').style.border = '2px solid var(--emergency-red)';
-        } else {
-            document.querySelector('.wheel-selection').style.border = '';
-        }
-
-        return isValid;
     }
-
-    showMessage(message, type) {
-        // Remove existing messages
-        const existing = document.querySelector('.form-message');
-        if (existing) existing.remove();
-
-        // Create message element
-        const messageEl = document.createElement('div');
-        messageEl.className = `form-message form-message-${type}`;
-        messageEl.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-            <span>${message}</span>
-        `;
-
-        // Add to page
-        const formActions = document.querySelector('.form-actions');
-        formActions.parentNode.insertBefore(messageEl, formActions);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                messageEl.style.opacity = '0';
-                setTimeout(() => messageEl.remove(), 300);
-            }
-        }, 5000);
+    
+    // Show success message
+    function showSuccess(message) {
+        Utils.showNotification(message, 'success');
     }
-
-    resetForm() {
-        const form = document.getElementById('serviceRecordForm');
-        form.reset();
-        
-        // Reset wheel visuals
-        document.querySelectorAll('.wheel-box').forEach(box => {
-            box.style.borderColor = '';
-            box.style.backgroundColor = '';
-        });
-
-        // Reset photos preview
-        const preview = document.getElementById('photoPreview');
-        if (preview) preview.innerHTML = '';
-    }
-
-    handlePrint() {
-        window.print();
-    }
-
-    generateConfirmation(response) {
-        // Create a simple confirmation modal
-        const modal = document.createElement('div');
-        modal.className = 'confirmation-modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <i class="fas fa-check-circle"></i>
-                <h3>Record Saved</h3>
-                <p>Service record has been submitted.</p>
-                <div class="modal-actions">
-                    <button onclick="window.print()" class="btn btn-primary">
-                        <i class="fas fa-print"></i> Print Copy
-                    </button>
-                    <button onclick="this.closest('.confirmation-modal').remove()" class="btn btn-outline">
-                        Close
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        
-        // Add modal styles
-        if (!document.querySelector('#modal-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'modal-styles';
-            styles.textContent = `
-                .confirmation-modal {
-                    position: fixed;
-                    top: 0; left: 0;
-                    width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                }
-                .modal-content {
-                    background: white;
-                    padding: 2rem;
-                    border-radius: var(--border-radius);
-                    text-align: center;
-                    max-width: 400px;
-                }
-                .modal-content i {
-                    font-size: 3rem;
-                    color: var(--success-color);
-                    margin-bottom: 1rem;
-                }
-                .modal-actions {
-                    margin-top: 1.5rem;
-                    display: flex;
-                    gap: 1rem;
-                    justify-content: center;
-                }
-                .form-message {
-                    padding: 1rem;
-                    border-radius: var(--border-radius);
-                    margin-bottom: 1rem;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }
-                .form-message-success {
-                    background: #d4edda;
-                    color: #155724;
-                    border: 1px solid #c3e6cb;
-                }
-                .form-message-error {
-                    background: #f8d7da;
-                    color: #721c24;
-                    border: 1px solid #f5c6cb;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-    }
-}
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('serviceRecordForm')) {
-        window.serviceRecordForm = new ServiceRecordForm();
+    
+    // Show error message
+    function showError(message) {
+        Utils.showNotification(message, 'error');
     }
 });
