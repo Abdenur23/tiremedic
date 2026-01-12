@@ -102,6 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             previewItem.className = 'photo-preview-item';
                             previewItem.innerHTML = `
                                 <img src="${e.target.result}" alt="Wheel photo ${index + 1}">
+                                <div class="photo-preview-info">
+                                    <span>${file.name}</span>
+                                    <span>${(file.size / 1024).toFixed(2)} KB</span>
+                                </div>
                             `;
                             photoPreview.appendChild(previewItem);
                         };
@@ -117,195 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Signature pad functionality
-    const signatureCanvas = document.getElementById('signatureCanvas');
-    const signatureData = document.getElementById('signatureData');
-    const clearSignatureBtn = document.getElementById('clearSignature');
-    
-    if (signatureCanvas) {
-        const ctx = signatureCanvas.getContext('2d');
-        let drawing = false;
-        let lastX = 0;
-        let lastY = 0;
-        
-        // Set up canvas
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        // Clear canvas initially
-        clearCanvas();
-        
-        // Mouse events
-        signatureCanvas.addEventListener('mousedown', startDrawing);
-        signatureCanvas.addEventListener('mousemove', draw);
-        signatureCanvas.addEventListener('mouseup', stopDrawing);
-        signatureCanvas.addEventListener('mouseout', stopDrawing);
-        
-        // Touch events for mobile
-        signatureCanvas.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            signatureCanvas.dispatchEvent(mouseEvent);
-        });
-        
-        signatureCanvas.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            signatureCanvas.dispatchEvent(mouseEvent);
-        });
-        
-        signatureCanvas.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            const mouseEvent = new MouseEvent('mouseup', {});
-            signatureCanvas.dispatchEvent(mouseEvent);
-        });
-        
-        // Clear button
-        if (clearSignatureBtn) {
-            clearSignatureBtn.addEventListener('click', clearCanvas);
-        }
-        
-        function startDrawing(e) {
-            drawing = true;
-            const rect = signatureCanvas.getBoundingClientRect();
-            lastX = e.clientX - rect.left;
-            lastY = e.clientY - rect.top;
-        }
-        
-        function draw(e) {
-            if (!drawing) return;
-            
-            const rect = signatureCanvas.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-            
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(currentX, currentY);
-            ctx.stroke();
-            
-            lastX = currentX;
-            lastY = currentY;
-            
-            // Save signature data
-            saveSignature();
-        }
-        
-        function stopDrawing() {
-            drawing = false;
-            saveSignature();
-        }
-        
-        function clearCanvas() {
-            ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-            ctx.beginPath();
-            
-            // Add a subtle background
-            ctx.fillStyle = '#f9f9f9';
-            ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-            
-            // Add border
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-            
-            // Reset stroke style for drawing
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            
-            if (signatureData) {
-                signatureData.value = '';
-            }
-        }
-        
-        function saveSignature() {
-            if (signatureData) {
-                signatureData.value = signatureCanvas.toDataURL('image/png');
-            }
-        }
-    }
-    
-    // Form submission handling for service record
-    const serviceRecordForm = document.getElementById('serviceRecordForm');
-    if (serviceRecordForm) {
-        serviceRecordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validate required fields
-            const requiredFields = this.querySelectorAll('[required]');
-            let isValid = true;
-            
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'var(--emergency-red)';
-                    field.style.boxShadow = '0 0 0 3px rgba(211, 47, 47, 0.1)';
-                } else {
-                    field.style.borderColor = '';
-                    field.style.boxShadow = '';
-                }
-            });
-            
-            // Validate at least one wheel selected
-            const wheelCheckboxes = this.querySelectorAll('input[name="wheels"]:checked');
-            if (wheelCheckboxes.length === 0) {
-                isValid = false;
-                const wheelSelection = document.querySelector('.wheel-selection');
-                if (wheelSelection) {
-                    wheelSelection.style.border = '2px solid var(--emergency-red)';
-                    wheelSelection.style.borderRadius = 'var(--border-radius)';
-                    wheelSelection.style.padding = '10px';
-                }
-            }
-            
-            // Validate signature
-            const signatureData = document.getElementById('signatureData');
-            if (signatureData && !signatureData.value.trim()) {
-                isValid = false;
-                const signaturePad = document.querySelector('.signature-pad');
-                if (signaturePad) {
-                    signaturePad.style.borderColor = 'var(--emergency-red)';
-                }
-            }
-            
-            if (!isValid) {
-                alert('Please fill in all required fields and provide a signature.');
-                return;
-            }
-            
-            // In a real application, you would send the form data to a server
-            // For now, we'll simulate a successful submission
-            alert('Service record submitted successfully!');
-            
-            // Optionally clear form
-            // this.reset();
-            
-            // Reset signature canvas
-            if (signatureCanvas) {
-                clearCanvas();
-            }
-        });
-    }
-    
-    // Print form functionality
-    const printBtn = document.getElementById('printForm');
-    if (printBtn) {
-        printBtn.addEventListener('click', function() {
-            window.print();
-        });
-    }
-    
-    // Initialize any future modules
+    // Initialize modules
     initializeModules();
 });
 
@@ -326,6 +142,14 @@ const Utils = {
     },
     
     showNotification: function(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        });
+        
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
@@ -380,6 +204,7 @@ const Utils = {
             document.head.appendChild(style);
         }
         
+        // Auto-remove after 5 seconds
         setTimeout(() => {
             notification.classList.add('fade-out');
             setTimeout(() => {
@@ -389,6 +214,7 @@ const Utils = {
             }, 300);
         }, 5000);
         
+        // Close button
         notification.querySelector('.notification-close').addEventListener('click', function() {
             notification.classList.add('fade-out');
             setTimeout(() => {
@@ -400,15 +226,15 @@ const Utils = {
     }
 };
 
-// Function to initialize future modular components
+// Function to initialize modular components
 function initializeModules() {
     console.log('Initializing Tire Medics SF application...');
     
-    // Future module initialization will go here
-    // Example:
-    // if (typeof ServiceRecordModule !== 'undefined') {
-    //     ServiceRecordModule.init();
-    // }
+    // Initialize Service Record Module if it exists
+    if (typeof ServiceRecordModule !== 'undefined' && ServiceRecordModule.init) {
+        // It will auto-initialize, but we can call init here too for safety
+        ServiceRecordModule.init();
+    }
 }
 
 // Export for modular use
