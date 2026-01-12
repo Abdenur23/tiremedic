@@ -1,244 +1,303 @@
-// service-record.js
-document.addEventListener('DOMContentLoaded', function() {
-    // ... (keep your existing DOMContentLoaded code as is) ...
+// Service Record Module
+const ServiceRecordModule = (function() {
+    // Configuration
+    const API_ENDPOINT = 'https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod';
+    const BUCKET_NAME = 'tire-medics-service-images';
     
-    // Form submission handling for service record
-    const serviceRecordForm = document.getElementById('serviceRecordForm');
-    if (serviceRecordForm) {
-        serviceRecordForm.addEventListener('submit', async function(e) {
+    // Initialize module
+    function init() {
+        console.log('Service Record Module initialized');
+        
+        // Setup form submission
+        const serviceRecordForm = document.getElementById('serviceRecordForm');
+        if (serviceRecordForm) {
+            setupFormSubmission(serviceRecordForm);
+        }
+        
+        // Setup print functionality
+        const printBtn = document.getElementById('printForm');
+        if (printBtn) {
+            printBtn.addEventListener('click', handlePrint);
+        }
+    }
+    
+    // Setup form submission with AWS integration
+    function setupFormSubmission(form) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validate required fields
-            const requiredFields = this.querySelectorAll('[required]');
-            let isValid = true;
-            
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'var(--emergency-red)';
-                    field.style.boxShadow = '0 0 0 3px rgba(211, 47, 47, 0.1)';
-                } else {
-                    field.style.borderColor = '';
-                    field.style.boxShadow = '';
-                }
-            });
-            
-            // Validate at least one wheel selected
-            const wheelCheckboxes = this.querySelectorAll('input[name="wheels"]:checked');
-            if (wheelCheckboxes.length === 0) {
-                isValid = false;
-                const wheelSelection = document.querySelector('.wheel-selection');
-                if (wheelSelection) {
-                    wheelSelection.style.border = '2px solid var(--emergency-red)';
-                    wheelSelection.style.borderRadius = 'var(--border-radius)';
-                    wheelSelection.style.padding = '10px';
-                }
-            }
-            
-            // Validate initials
-            const initialsInput = document.getElementById('customerInitials');
-            if (initialsInput && !initialsInput.value.trim()) {
-                isValid = false;
-                initialsInput.style.borderColor = 'var(--emergency-red)';
-            }
-            
-            if (!isValid) {
-                alert('Please fill in all required fields.');
+            // Validate form
+            if (!validateForm(form)) {
+                Utils.showNotification('Please fill in all required fields', 'error');
                 return;
             }
             
             // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
+            const submitBtn = form.querySelector('.btn-record-submit');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             submitBtn.disabled = true;
             
             try {
-                // Collect form data
-                const formData = new FormData(this);
+                // Prepare form data
+                const formData = prepareFormData(form);
                 
-                // Get checkbox values
-                const wheels = [];
-                document.querySelectorAll('input[name="wheels"]:checked').forEach(cb => {
-                    wheels.push(cb.value);
-                });
+                // Upload photos and get presigned URLs
+                const photoUrls = await uploadPhotos(formData.photos);
                 
-                const conditions = [];
-                document.querySelectorAll('input[name="condition"]:checked').forEach(cb => {
-                    conditions.push(cb.value);
-                });
+                // Update form data with photo URLs
+                formData.photoUrls = photoUrls;
                 
-                // Create JSON payload
-                const payload = {
-                    serviceDetails: {
-                        streetAddress: formData.get('streetAddress'),
-                        cityState: formData.get('cityState'),
-                        customerType: formData.get('customerType'),
-                        firstName: formData.get('firstName'),
-                        plateState: formData.get('plateState'),
-                        plateNumber: formData.get('plateNumber'),
-                        serviceDate: new Date().toISOString()
-                    },
-                    wheelInspection: {
-                        wheels: wheels,
-                        conditions: conditions,
-                        wheelNotes: formData.get('wheelNotes')
-                    },
-                    agreement: {
-                        customerInitials: formData.get('customerInitials'),
-                        signatureConfirm: formData.get('signatureConfirm') === 'on'
-                    }
-                };
+                // Save service record to DynamoDB
+                const result = await saveServiceRecord(formData);
                 
-                // Prepare multipart form data for files
-                const apiFormData = new FormData();
-                apiFormData.append('serviceRecord', JSON.stringify(payload));
+                // Show success message
+                Utils.showNotification('Service record submitted successfully!', 'success');
                 
-                // Append photos
-                const photos = document.getElementById('wheelPhotos').files;
-                for (let i = 0; i < photos.length; i++) {
-                    apiFormData.append('photos', photos[i]);
-                }
-                
-                // Send to API Gateway endpoint
-                const response = await fetch('https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod', {
-                    method: 'POST',
-                    body: apiFormData
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Show success message
-                    alert('Service record submitted successfully! Record ID: ' + result.recordId);
+                // Generate PDF or redirect
+                setTimeout(() => {
+                    // Optional: Generate PDF receipt
+                    // generateReceipt(result);
                     
                     // Reset form
-                    this.reset();
+                    form.reset();
                     
-                    // Clear photo preview
+                    // Reset photo preview
                     const photoPreview = document.getElementById('photoPreview');
-                    if (photoPreview) {
-                        photoPreview.innerHTML = '';
+                    if (photoPreview) photoPreview.innerHTML = '';
+                    
+                    // Reset signature canvas
+                    const signatureCanvas = document.getElementById('signatureCanvas');
+                    if (signatureCanvas) {
+                        const ctx = signatureCanvas.getContext('2d');
+                        ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
                     }
-                    
-                    // Reset file upload label
-                    const uploadLabel = document.querySelector('.file-upload-label');
-                    if (uploadLabel) {
-                        uploadLabel.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Take or upload photos</span>';
-                        uploadLabel.style.color = '';
-                    }
-                    
-                    // Reset wheel selection visuals
-                    document.querySelectorAll('.wheel-box').forEach(box => {
-                        box.style.borderColor = '';
-                        box.style.backgroundColor = '';
-                        if (box.querySelector('i')) {
-                            box.querySelector('i').style.color = '';
-                        }
-                    });
-                    
-                } else {
-                    throw new Error(result.message || 'Submission failed');
-                }
+                }, 2000);
                 
             } catch (error) {
                 console.error('Error submitting form:', error);
-                alert('Failed to submit service record: ' + error.message);
+                Utils.showNotification('Error submitting form. Please try again.', 'error');
             } finally {
-                // Reset button state
+                // Restore button state
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
     }
     
-    // Photo upload preview (enhanced with better feedback)
-    const photoUpload = document.getElementById('wheelPhotos');
-    const photoPreview = document.getElementById('photoPreview');
-    
-    if (photoUpload && photoPreview) {
-        photoUpload.addEventListener('change', function() {
-            photoPreview.innerHTML = '';
-            
-            if (this.files.length > 0) {
-                // Show file count
-                const fileCount = document.createElement('div');
-                fileCount.className = 'photo-count';
-                fileCount.innerHTML = `<i class="fas fa-images"></i> ${this.files.length} photo(s) selected`;
-                photoPreview.appendChild(fileCount);
-                
-                // Show first few thumbnails
-                const maxThumbnails = 3;
-                Array.from(this.files).slice(0, maxThumbnails).forEach((file, index) => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const previewItem = document.createElement('div');
-                            previewItem.className = 'photo-preview-item';
-                            previewItem.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview ${index + 1}">
-                            `;
-                            photoPreview.appendChild(previewItem);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-                
-                // Update label
-                const label = this.nextElementSibling;
-                label.innerHTML = `<i class="fas fa-check-circle"></i><span>${this.files.length} photo(s) selected</span>`;
-                label.style.color = 'var(--success-color)';
-                
-                if (this.files.length > maxThumbnails) {
-                    const moreText = document.createElement('div');
-                    moreText.className = 'more-photos';
-                    moreText.innerHTML = `<i class="fas fa-plus-circle"></i> +${this.files.length - maxThumbnails} more`;
-                    photoPreview.appendChild(moreText);
-                }
+    // Validate form
+    function validateForm(form) {
+        let isValid = true;
+        
+        // Check required fields
+        const requiredFields = form.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                highlightError(field);
+            } else {
+                clearHighlight(field);
             }
         });
+        
+        // Check at least one wheel selected
+        const wheelCheckboxes = form.querySelectorAll('input[name="wheels"]:checked');
+        if (wheelCheckboxes.length === 0) {
+            isValid = false;
+            const wheelSelection = form.querySelector('.wheel-selection');
+            if (wheelSelection) highlightError(wheelSelection);
+        }
+        
+        // Check signature
+        const signatureConfirm = form.querySelector('#signatureConfirm');
+        if (signatureConfirm && !signatureConfirm.checked) {
+            isValid = false;
+            highlightError(signatureConfirm.parentElement);
+        }
+        
+        // Check initials
+        const initials = form.querySelector('#customerInitials');
+        if (initials && initials.value.trim().length < 2) {
+            isValid = false;
+            highlightError(initials);
+        }
+        
+        return isValid;
     }
     
-    // Add CSS for photo preview enhancements
-    const style = document.createElement('style');
-    style.textContent = `
-        .photo-count {
-            background: var(--light-gray);
-            padding: 10px;
-            border-radius: var(--border-radius);
-            margin-bottom: 10px;
-            color: var(--dark-color);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+    // Highlight field error
+    function highlightError(element) {
+        element.style.borderColor = 'var(--emergency-red)';
+        element.style.boxShadow = '0 0 0 3px rgba(211, 47, 47, 0.1)';
+    }
+    
+    // Clear highlight
+    function clearHighlight(element) {
+        element.style.borderColor = '';
+        element.style.boxShadow = '';
+    }
+    
+    // Prepare form data
+    function prepareFormData(form) {
+        const formData = new FormData(form);
+        const data = {
+            recordId: generateRecordId(),
+            timestamp: new Date().toISOString(),
+            serviceDate: document.getElementById('autoDate')?.textContent || new Date().toLocaleDateString(),
+        };
+        
+        // Collect all form fields
+        formData.forEach((value, key) => {
+            if (key === 'wheels' || key === 'condition') {
+                if (!data[key]) data[key] = [];
+                data[key].push(value);
+            } else if (key === 'wheelPhotos') {
+                // Photos will be handled separately
+                if (!data.photos) data.photos = [];
+                // Note: We'll get files from the file input directly
+            } else {
+                data[key] = value;
+            }
+        });
+        
+        // Get files from file input
+        const fileInput = document.getElementById('wheelPhotos');
+        if (fileInput && fileInput.files.length > 0) {
+            data.photos = Array.from(fileInput.files);
         }
-        .photo-preview-item {
-            display: inline-block;
-            margin: 0 10px 10px 0;
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid var(--light-gray);
+        
+        return data;
+    }
+    
+    // Upload photos and get presigned URLs
+    async function uploadPhotos(photos) {
+        if (!photos || photos.length === 0) return [];
+        
+        const photoUrls = [];
+        
+        for (let i = 0; i < photos.length; i++) {
+            const photo = photos[i];
+            const fileName = `service-record-${Date.now()}-${i}.${photo.name.split('.').pop()}`;
+            
+            try {
+                // Get presigned URL for upload
+                const presignedUrl = await getPresignedUrl(fileName);
+                
+                // Upload photo to S3 using presigned URL
+                await uploadToS3(presignedUrl, photo);
+                
+                // Store the public URL
+                photoUrls.push(`https://${BUCKET_NAME}.s3.amazonaws.com/${fileName}`);
+                
+            } catch (error) {
+                console.error(`Error uploading photo ${i}:`, error);
+                throw new Error(`Failed to upload photo ${photo.name}`);
+            }
         }
-        .photo-preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        
+        return photoUrls;
+    }
+    
+    // Get presigned URL from Lambda
+    async function getPresignedUrl(fileName) {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'getPresignedUrl',
+                bucket: BUCKET_NAME,
+                key: fileName,
+                contentType: 'image/*'
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to get presigned URL: ${response.statusText}`);
         }
-        .more-photos {
-            color: var(--gray-color);
-            font-size: 14px;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        
+        const data = await response.json();
+        return data.url;
+    }
+    
+    // Upload to S3 using presigned URL
+    async function uploadToS3(presignedUrl, file) {
+        const response = await fetch(presignedUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': file.type,
+            },
+            body: file
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to upload to S3: ${response.statusText}`);
         }
-    `;
-    document.head.appendChild(style);
-});
+        
+        return response;
+    }
+    
+    // Save service record to DynamoDB via Lambda
+    async function saveServiceRecord(recordData) {
+        // Remove photos from data before sending to Lambda
+        const { photos, ...dataWithoutPhotos } = recordData;
+        
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'saveServiceRecord',
+                tableName: 'tire-medics-service-records',
+                recordData: dataWithoutPhotos,
+                photoUrls: recordData.photoUrls || []
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to save service record: ${response.statusText}`);
+        }
+        
+        return await response.json();
+    }
+    
+    // Generate unique record ID
+    function generateRecordId() {
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substr(2, 9);
+        return `SR-${timestamp}-${random}`.toUpperCase();
+    }
+    
+    // Handle print
+    function handlePrint() {
+        window.print();
+    }
+    
+    // Generate receipt (optional)
+    function generateReceipt(data) {
+        // Implementation for generating PDF receipt
+        console.log('Generating receipt for:', data);
+        // You could use libraries like jsPDF or html2pdf here
+    }
+    
+    // Public API
+    return {
+        init,
+        validateForm,
+        prepareFormData,
+        uploadPhotos,
+        saveServiceRecord,
+        generateRecordId
+    };
+})();
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        ServiceRecordModule.init();
+    });
+} else {
+    ServiceRecordModule.init();
+}
