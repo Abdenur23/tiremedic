@@ -1,8 +1,7 @@
-// Service Record Module
+// Service Record Module (No File Upload Version)
 const ServiceRecordModule = (function() {
     // Configuration
     const API_ENDPOINT = 'https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod';
-    const BUCKET_NAME = 'tire-medics-service-images';
     
     // Initialize module
     function init() {
@@ -42,37 +41,20 @@ const ServiceRecordModule = (function() {
                 // Prepare form data
                 const formData = prepareFormData(form);
                 
-                // Upload photos and get presigned URLs
-                const photoUrls = await uploadPhotos(formData.photos);
-                
-                // Update form data with photo URLs
-                formData.photoUrls = photoUrls;
-                
                 // Save service record to DynamoDB
                 const result = await saveServiceRecord(formData);
                 
                 // Show success message
                 Utils.showNotification('Service record submitted successfully!', 'success');
                 
-                // Generate PDF or redirect
-                setTimeout(() => {
-                    // Optional: Generate PDF receipt
-                    // generateReceipt(result);
-                    
-                    // Reset form
-                    form.reset();
-                    
-                    // Reset photo preview
-                    const photoPreview = document.getElementById('photoPreview');
-                    if (photoPreview) photoPreview.innerHTML = '';
-                    
-                    // Reset signature canvas
-                    const signatureCanvas = document.getElementById('signatureCanvas');
-                    if (signatureCanvas) {
-                        const ctx = signatureCanvas.getContext('2d');
-                        ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-                    }
-                }, 2000);
+                // Reset form
+                form.reset();
+                
+                // Reset any UI elements
+                resetFormUI();
+                
+                // Optional: Show confirmation or redirect
+                console.log('Service record saved:', result);
                 
             } catch (error) {
                 console.error('Error submitting form:', error);
@@ -108,7 +90,7 @@ const ServiceRecordModule = (function() {
             if (wheelSelection) highlightError(wheelSelection);
         }
         
-        // Check signature
+        // Check signature confirmation
         const signatureConfirm = form.querySelector('#signatureConfirm');
         if (signatureConfirm && !signatureConfirm.checked) {
             isValid = false;
@@ -151,98 +133,28 @@ const ServiceRecordModule = (function() {
             if (key === 'wheels' || key === 'condition') {
                 if (!data[key]) data[key] = [];
                 data[key].push(value);
-            } else if (key === 'wheelPhotos') {
-                // Photos will be handled separately
-                if (!data.photos) data.photos = [];
-                // Note: We'll get files from the file input directly
             } else {
                 data[key] = value;
             }
         });
         
-        // Get files from file input
-        const fileInput = document.getElementById('wheelPhotos');
-        if (fileInput && fileInput.files.length > 0) {
-            data.photos = Array.from(fileInput.files);
+        // Get wheel checkboxes directly (in case FormData doesn't capture all)
+        const wheelCheckboxes = form.querySelectorAll('input[name="wheels"]:checked');
+        if (wheelCheckboxes.length > 0 && (!data.wheels || data.wheels.length === 0)) {
+            data.wheels = Array.from(wheelCheckboxes).map(cb => cb.value);
+        }
+        
+        // Get condition checkboxes
+        const conditionCheckboxes = form.querySelectorAll('input[name="condition"]:checked');
+        if (conditionCheckboxes.length > 0 && (!data.condition || data.condition.length === 0)) {
+            data.condition = Array.from(conditionCheckboxes).map(cb => cb.value);
         }
         
         return data;
     }
     
-    // Upload photos and get presigned URLs
-    async function uploadPhotos(photos) {
-        if (!photos || photos.length === 0) return [];
-        
-        const photoUrls = [];
-        
-        for (let i = 0; i < photos.length; i++) {
-            const photo = photos[i];
-            const fileName = `service-record-${Date.now()}-${i}.${photo.name.split('.').pop()}`;
-            
-            try {
-                // Get presigned URL for upload
-                const presignedUrl = await getPresignedUrl(fileName);
-                
-                // Upload photo to S3 using presigned URL
-                await uploadToS3(presignedUrl, photo);
-                
-                // Store the public URL
-                photoUrls.push(`https://${BUCKET_NAME}.s3.amazonaws.com/${fileName}`);
-                
-            } catch (error) {
-                console.error(`Error uploading photo ${i}:`, error);
-                throw new Error(`Failed to upload photo ${photo.name}`);
-            }
-        }
-        
-        return photoUrls;
-    }
-    
-    // Get presigned URL from Lambda
-    async function getPresignedUrl(fileName) {
-        const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'getPresignedUrl',
-                bucket: BUCKET_NAME,
-                key: fileName,
-                contentType: 'image/*'
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Failed to get presigned URL: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        return data.url;
-    }
-    
-    // Upload to S3 using presigned URL
-    async function uploadToS3(presignedUrl, file) {
-        const response = await fetch(presignedUrl, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': file.type,
-            },
-            body: file
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Failed to upload to S3: ${response.statusText}`);
-        }
-        
-        return response;
-    }
-    
     // Save service record to DynamoDB via Lambda
     async function saveServiceRecord(recordData) {
-        // Remove photos from data before sending to Lambda
-        const { photos, ...dataWithoutPhotos } = recordData;
-        
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -251,13 +163,13 @@ const ServiceRecordModule = (function() {
             body: JSON.stringify({
                 action: 'saveServiceRecord',
                 tableName: 'tire-medics-service-records',
-                recordData: dataWithoutPhotos,
-                photoUrls: recordData.photoUrls || []
+                recordData: recordData
             })
         });
         
         if (!response.ok) {
-            throw new Error(`Failed to save service record: ${response.statusText}`);
+            const errorText = await response.text();
+            throw new Error(`Failed to save service record: ${response.status} - ${errorText}`);
         }
         
         return await response.json();
@@ -275,11 +187,34 @@ const ServiceRecordModule = (function() {
         window.print();
     }
     
-    // Generate receipt (optional)
-    function generateReceipt(data) {
-        // Implementation for generating PDF receipt
-        console.log('Generating receipt for:', data);
-        // You could use libraries like jsPDF or html2pdf here
+    // Reset form UI
+    function resetFormUI() {
+        // Reset wheel selection highlights
+        const wheelOptions = document.querySelectorAll('.wheel-option');
+        wheelOptions.forEach(option => {
+            const wheelBox = option.querySelector('.wheel-box');
+            if (wheelBox) {
+                wheelBox.style.borderColor = '';
+                wheelBox.style.backgroundColor = '';
+                const icon = wheelBox.querySelector('i');
+                if (icon) icon.style.color = '';
+            }
+        });
+        
+        // Reset photo preview
+        const photoPreview = document.getElementById('photoPreview');
+        if (photoPreview) photoPreview.innerHTML = '';
+        
+        // Reset file upload label
+        const fileUpload = document.getElementById('wheelPhotos');
+        if (fileUpload) {
+            fileUpload.value = '';
+            const label = fileUpload.nextElementSibling;
+            if (label && label.classList.contains('file-upload-label')) {
+                label.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Take or upload photos</span>';
+                label.style.color = '';
+            }
+        }
     }
     
     // Public API
@@ -287,7 +222,6 @@ const ServiceRecordModule = (function() {
         init,
         validateForm,
         prepareFormData,
-        uploadPhotos,
         saveServiceRecord,
         generateRecordId
     };
