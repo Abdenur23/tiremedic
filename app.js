@@ -85,42 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Photo upload preview
-    const photoUpload = document.getElementById('wheelPhotos');
-    const photoPreview = document.getElementById('photoPreview');
-    
-    if (photoUpload && photoPreview) {
-        photoUpload.addEventListener('change', function() {
-            photoPreview.innerHTML = '';
-            
-            if (this.files.length > 0) {
-                Array.from(this.files).forEach((file, index) => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const previewItem = document.createElement('div');
-                            previewItem.className = 'photo-preview-item';
-                            previewItem.innerHTML = `
-                                <img src="${e.target.result}" alt="Wheel photo ${index + 1}">
-                                <div class="photo-preview-info">
-                                    <span>${file.name}</span>
-                                    <span>${(file.size / 1024).toFixed(2)} KB</span>
-                                </div>
-                            `;
-                            photoPreview.appendChild(previewItem);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-                
-                // Update label
-                const label = this.nextElementSibling;
-                label.innerHTML = `<i class="fas fa-check-circle"></i><span>${this.files.length} photo(s) selected</span>`;
-                label.style.color = 'var(--success-color)';
-            }
-        });
-    }
-    
     // Initialize modules
     initializeModules();
 });
@@ -232,7 +196,6 @@ function initializeModules() {
     
     // Initialize Service Record Module if it exists
     if (typeof ServiceRecordModule !== 'undefined' && ServiceRecordModule.init) {
-        // It will auto-initialize, but we can call init here too for safety
         ServiceRecordModule.init();
     }
 }
