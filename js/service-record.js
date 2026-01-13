@@ -3,6 +3,9 @@ const ServiceRecordModule = (function() {
     // Configuration
     const API_ENDPOINT = 'https://qick4b9ex5.execute-api.us-east-1.amazonaws.com/prod/prod';
     
+    // Track if form is already submitting to prevent double submission
+    let isSubmitting = false;
+    
     // Initialize module
     function init() {
         console.log('Service Record Module initialized');
@@ -10,7 +13,12 @@ const ServiceRecordModule = (function() {
         // Setup form submission
         const serviceRecordForm = document.getElementById('serviceRecordForm');
         if (serviceRecordForm) {
-            setupFormSubmission(serviceRecordForm);
+            // Remove any existing event listeners first
+            const newForm = serviceRecordForm.cloneNode(true);
+            serviceRecordForm.parentNode.replaceChild(newForm, serviceRecordForm);
+            
+            // Setup form submission on the new form
+            setupFormSubmission(newForm);
         }
         
         // Setup print functionality
@@ -25,44 +33,64 @@ const ServiceRecordModule = (function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Prevent double submission
+            if (isSubmitting) {
+                console.log('Form submission already in progress');
+                return;
+            }
+            
+            // Set submitting flag
+            isSubmitting = true;
+            
             // Validate form
             if (!validateForm(form)) {
                 Utils.showNotification('Please fill in all required fields', 'error');
+                isSubmitting = false;
                 return;
             }
             
             // Show loading state
             const submitBtn = form.querySelector('.btn-record-submit');
             const originalText = submitBtn.innerHTML;
+            const originalDisabled = submitBtn.disabled;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             submitBtn.disabled = true;
             
             try {
                 // Prepare form data
                 const formData = prepareFormData(form);
+                console.log('Submitting form data:', formData);
                 
                 // Save service record to DynamoDB
                 const result = await saveServiceRecord(formData);
+                console.log('Server response:', result);
                 
                 // Show success message
                 Utils.showNotification('Service record submitted successfully!', 'success');
                 
-                // Reset form
-                form.reset();
-                
-                // Reset any UI elements
-                resetFormUI();
-                
-                // Optional: Show confirmation or redirect
-                console.log('Service record saved:', result);
+                // Reset form after delay
+                setTimeout(() => {
+                    form.reset();
+                    resetFormUI();
+                    
+                    // Show record ID to user
+                    if (result.recordId) {
+                        Utils.showNotification(`Record ID: ${result.recordId}`, 'info');
+                    }
+                }, 1000);
                 
             } catch (error) {
                 console.error('Error submitting form:', error);
-                Utils.showNotification('Error submitting form. Please try again.', 'error');
+                Utils.showNotification(`Error: ${error.message}`, 'error');
             } finally {
                 // Restore button state
                 submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+                submitBtn.disabled = originalDisabled;
+                
+                // Reset submitting flag after a delay to prevent rapid re-submission
+                setTimeout(() => {
+                    isSubmitting = false;
+                }, 2000);
             }
         });
     }
@@ -121,32 +149,29 @@ const ServiceRecordModule = (function() {
     
     // Prepare form data
     function prepareFormData(form) {
-        const formData = new FormData(form);
         const data = {
             recordId: generateRecordId(),
             timestamp: new Date().toISOString(),
             serviceDate: document.getElementById('autoDate')?.textContent || new Date().toLocaleDateString(),
         };
         
-        // Collect all form fields
-        formData.forEach((value, key) => {
-            if (key === 'wheels' || key === 'condition') {
-                if (!data[key]) data[key] = [];
-                data[key].push(value);
-            } else {
-                data[key] = value;
+        // Collect text inputs, selects, and textareas
+        const inputs = form.querySelectorAll('input[type="text"], input[type="hidden"], select, textarea');
+        inputs.forEach(input => {
+            if (input.name && input.name !== 'wheels' && input.name !== 'condition') {
+                data[input.name] = input.value.trim();
             }
         });
         
-        // Get wheel checkboxes directly (in case FormData doesn't capture all)
+        // Collect wheel checkboxes
         const wheelCheckboxes = form.querySelectorAll('input[name="wheels"]:checked');
-        if (wheelCheckboxes.length > 0 && (!data.wheels || data.wheels.length === 0)) {
+        if (wheelCheckboxes.length > 0) {
             data.wheels = Array.from(wheelCheckboxes).map(cb => cb.value);
         }
         
-        // Get condition checkboxes
+        // Collect condition checkboxes
         const conditionCheckboxes = form.querySelectorAll('input[name="condition"]:checked');
-        if (conditionCheckboxes.length > 0 && (!data.condition || data.condition.length === 0)) {
+        if (conditionCheckboxes.length > 0) {
             data.condition = Array.from(conditionCheckboxes).map(cb => cb.value);
         }
         
@@ -168,8 +193,15 @@ const ServiceRecordModule = (function() {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to save service record: ${response.status} - ${errorText}`);
+            let errorMessage = `HTTP error: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // If response is not JSON, use status text
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
         }
         
         return await response.json();
@@ -201,20 +233,11 @@ const ServiceRecordModule = (function() {
             }
         });
         
-        // Reset photo preview
-        const photoPreview = document.getElementById('photoPreview');
-        if (photoPreview) photoPreview.innerHTML = '';
-        
-        // Reset file upload label
-        const fileUpload = document.getElementById('wheelPhotos');
-        if (fileUpload) {
-            fileUpload.value = '';
-            const label = fileUpload.nextElementSibling;
-            if (label && label.classList.contains('file-upload-label')) {
-                label.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Take or upload photos</span>';
-                label.style.color = '';
-            }
-        }
+        // Clear all checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
     
     // Public API
@@ -228,10 +251,9 @@ const ServiceRecordModule = (function() {
 })();
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    // Small delay to ensure all DOM is loaded
+    setTimeout(() => {
         ServiceRecordModule.init();
-    });
-} else {
-    ServiceRecordModule.init();
-}
+    }, 100);
+});
