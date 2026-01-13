@@ -64,30 +64,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Wheel selection interaction
-    const wheelOptions = document.querySelectorAll('.wheel-option');
-    wheelOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            const checkbox = this.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
-            
-            // Update visual state
-            const wheelBox = this.querySelector('.wheel-box');
-            if (checkbox.checked) {
-                wheelBox.style.borderColor = 'var(--emergency-red)';
-                wheelBox.style.backgroundColor = 'var(--emergency-light)';
-                wheelBox.querySelector('i').style.color = 'var(--emergency-red)';
-            } else {
-                wheelBox.style.borderColor = '';
-                wheelBox.style.backgroundColor = '';
-                wheelBox.querySelector('i').style.color = '';
-            }
-        });
-    });
+    // Initialize wheel selection (will be re-initialized by ServiceRecordModule after form reset)
+    initializeWheelSelection();
     
     // Initialize modules
     initializeModules();
 });
+
+// Wheel selection interaction
+function initializeWheelSelection() {
+    const wheelOptions = document.querySelectorAll('.wheel-option');
+    wheelOptions.forEach(option => {
+        // Remove any existing event listeners
+        const newOption = option.cloneNode(true);
+        option.parentNode.replaceChild(newOption, option);
+        
+        // Add click event to the new element
+        newOption.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                
+                // Update visual state
+                const wheelBox = this.querySelector('.wheel-box');
+                if (wheelBox) {
+                    if (checkbox.checked) {
+                        wheelBox.style.borderColor = 'var(--emergency-red)';
+                        wheelBox.style.backgroundColor = 'var(--emergency-light)';
+                        const icon = wheelBox.querySelector('i');
+                        if (icon) icon.style.color = 'var(--emergency-red)';
+                    } else {
+                        wheelBox.style.borderColor = '';
+                        wheelBox.style.backgroundColor = '';
+                        const icon = wheelBox.querySelector('i');
+                        if (icon) icon.style.color = '';
+                    }
+                }
+            }
+        });
+    });
+}
 
 // Utility functions
 const Utils = {
@@ -202,5 +219,5 @@ function initializeModules() {
 
 // Export for modular use
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Utils, initializeModules };
+    module.exports = { Utils, initializeModules, initializeWheelSelection };
 }
