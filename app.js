@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize wheel selection (will be re-initialized by ServiceRecordModule after form reset)
     initializeWheelSelection();
     
+    // Initialize condition checkbox labels (for mobile)
+    initializeConditionCheckboxes();
+    
     // Initialize modules
     initializeModules();
 });
@@ -76,15 +79,19 @@ function initializeWheelSelection() {
     const wheelOptions = document.querySelectorAll('.wheel-option');
     wheelOptions.forEach(option => {
         // Remove any existing event listeners
-        const newOption = option.cloneNode(true);
-        option.parentNode.replaceChild(newOption, option);
+        if (option._wheelListener) {
+            option.removeEventListener('click', option._wheelListener);
+            option.removeEventListener('touchstart', option._wheelTouchListener);
+        }
         
-        // Add click event to the new element
-        newOption.addEventListener('click', function(e) {
+        // Create new listeners
+        const clickHandler = function(e) {
+            e.preventDefault();
             e.stopPropagation();
             const checkbox = this.querySelector('input[type="checkbox"]');
             if (checkbox) {
                 checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
                 
                 // Update visual state
                 const wheelBox = this.querySelector('.wheel-box');
@@ -102,7 +109,59 @@ function initializeWheelSelection() {
                     }
                 }
             }
-        });
+        };
+        
+        const touchHandler = function(e) {
+            e.preventDefault();
+            clickHandler.call(this, e);
+        };
+        
+        // Store references for later removal
+        option._wheelListener = clickHandler;
+        option._wheelTouchListener = touchHandler;
+        
+        // Add event listeners
+        option.addEventListener('click', clickHandler);
+        option.addEventListener('touchstart', touchHandler, { passive: false });
+    });
+}
+
+// Initialize condition checkbox labels for mobile
+function initializeConditionCheckboxes() {
+    const checkboxGroups = document.querySelectorAll('.condition-checkboxes .checkbox-group');
+    checkboxGroups.forEach(group => {
+        const label = group.querySelector('label');
+        const checkbox = group.querySelector('input[type="checkbox"]');
+        
+        if (label && checkbox) {
+            // Make the entire label area clickable on mobile
+            label.style.cursor = 'pointer';
+            label.style.userSelect = 'none';
+            label.style.webkitTapHighlightColor = 'transparent';
+            
+            const clickHandler = function(e) {
+                e.preventDefault();
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            };
+            
+            // Remove existing listener if any
+            if (label._conditionListener) {
+                label.removeEventListener('click', label._conditionListener);
+                label.removeEventListener('touchstart', label._conditionTouchListener);
+            }
+            
+            // Store references
+            label._conditionListener = clickHandler;
+            label._conditionTouchListener = function(e) {
+                e.preventDefault();
+                clickHandler.call(this, e);
+            };
+            
+            // Add listeners
+            label.addEventListener('click', clickHandler);
+            label.addEventListener('touchstart', label._conditionTouchListener, { passive: false });
+        }
     });
 }
 
@@ -219,5 +278,5 @@ function initializeModules() {
 
 // Export for modular use
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Utils, initializeModules, initializeWheelSelection };
+    module.exports = { Utils, initializeModules, initializeWheelSelection, initializeConditionCheckboxes };
 }
