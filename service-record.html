@@ -162,48 +162,43 @@
                         <h2><i class="fas fa-search"></i> Wheel Inspection</h2>
                         <p class="section-subtitle">Inspect wheel(s) with flat tire only</p>
                     </div>
-
+                
                     <div class="form-group">
                         <label>Which wheel(s) have flat tire? *</label>
-                        <div class="wheel-selection">
-                            <div class="wheel-diagram">
-                                <div class="diagram-grid">
-                                    <div class="wheel-option" data-wheel="front-left">
-                                        <div class="wheel-box">
-                                            <i class="fas fa-tire"></i>
-                                            <span>Front Left</span>
-                                        </div>
-                                        <input type="checkbox" id="frontLeft" name="wheels" value="front-left">
-                                    </div>
-                                    <div class="wheel-option" data-wheel="front-right">
-                                        <div class="wheel-box">
-                                            <i class="fas fa-tire"></i>
-                                            <span>Front Right</span>
-                                        </div>
-                                        <input type="checkbox" id="frontRight" name="wheels" value="front-right">
-                                    </div>
-                                    <div class="wheel-option" data-wheel="rear-left">
-                                        <div class="wheel-box">
-                                            <i class="fas fa-tire"></i>
-                                            <span>Rear Left</span>
-                                        </div>
-                                        <input type="checkbox" id="rearLeft" name="wheels" value="rear-left">
-                                    </div>
-                                    <div class="wheel-option" data-wheel="rear-right">
-                                        <div class="wheel-box">
-                                            <i class="fas fa-tire"></i>
-                                            <span>Rear Right</span>
-                                        </div>
-                                        <input type="checkbox" id="rearRight" name="wheels" value="rear-right">
-                                    </div>
+                        <div class="simple-checkbox-group">
+                            <div class="checkbox-row">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="frontLeft" name="wheels" value="front-left">
+                                    <label for="frontLeft">
+                                        <i class="fas fa-tire"></i> Front Left
+                                    </label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="frontRight" name="wheels" value="front-right">
+                                    <label for="frontRight">
+                                        <i class="fas fa-tire"></i> Front Right
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="checkbox-row">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="rearLeft" name="wheels" value="rear-left">
+                                    <label for="rearLeft">
+                                        <i class="fas fa-tire"></i> Rear Left
+                                    </label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="rearRight" name="wheels" value="rear-right">
+                                    <label for="rearRight">
+                                        <i class="fas fa-tire"></i> Rear Right
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
-
+                
                     <div class="form-group">
                         <label>Wheel Condition</label>
-                        <!-- In the Wheel Condition section, update the checkboxes -->
                         <div class="condition-checkboxes">
                             <div class="checkbox-group">
                                 <input type="checkbox" id="scratches" name="condition" value="scratches">
@@ -219,14 +214,12 @@
                             </div>
                         </div>
                     </div>
-
+                
                     <div class="form-group">
                         <label for="wheelNotes">Additional Wheel Notes</label>
                         <textarea id="wheelNotes" name="wheelNotes" rows="3" 
                                   placeholder="Describe any pre-existing damage or special conditions..."></textarea>
                     </div>
-
-                    <!-- REMOVED PHOTO UPLOAD SECTION -->
                 </div>
 
                 <!-- Section 3: Agreement & Signature -->
