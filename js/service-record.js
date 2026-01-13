@@ -26,12 +26,6 @@ const ServiceRecordModule = (function() {
         if (printBtn) {
             printBtn.addEventListener('click', handlePrint);
         }
-        
-        // Initialize wheel selection after form is ready
-        setTimeout(() => {
-            initializeWheelSelection();
-            initializeConditionCheckboxes();
-        }, 100);
     }
     
     // Setup form submission with AWS integration
@@ -77,7 +71,6 @@ const ServiceRecordModule = (function() {
                 // Reset form after delay
                 setTimeout(() => {
                     form.reset();
-                    resetFormUI();
                     
                     // Show record ID to user
                     if (result.recordId) {
@@ -120,8 +113,18 @@ const ServiceRecordModule = (function() {
         const wheelCheckboxes = form.querySelectorAll('input[name="wheels"]:checked');
         if (wheelCheckboxes.length === 0) {
             isValid = false;
-            const wheelSelection = form.querySelector('.wheel-selection');
-            if (wheelSelection) highlightError(wheelSelection);
+            const wheelSelection = form.querySelector('.simple-checkbox-group');
+            if (wheelSelection) {
+                wheelSelection.style.border = '2px solid var(--emergency-red)';
+                wheelSelection.style.borderRadius = 'var(--border-radius)';
+                wheelSelection.style.padding = '10px';
+            }
+        } else {
+            const wheelSelection = form.querySelector('.simple-checkbox-group');
+            if (wheelSelection) {
+                wheelSelection.style.border = '';
+                wheelSelection.style.padding = '';
+            }
         }
         
         // Check signature confirmation
@@ -225,149 +228,13 @@ const ServiceRecordModule = (function() {
         window.print();
     }
     
-    // Reset form UI
-    function resetFormUI() {
-        // Reset wheel selection highlights
-        const wheelOptions = document.querySelectorAll('.wheel-option');
-        wheelOptions.forEach(option => {
-            const wheelBox = option.querySelector('.wheel-box');
-            if (wheelBox) {
-                wheelBox.style.borderColor = '';
-                wheelBox.style.backgroundColor = '';
-                const icon = wheelBox.querySelector('i');
-                if (icon) icon.style.color = '';
-            }
-        });
-        
-        // Clear all checkboxes
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-        });
-        
-        // Re-initialize wheel selection and condition checkboxes after reset
-        setTimeout(() => {
-            initializeWheelSelection();
-            initializeConditionCheckboxes();
-        }, 100);
-    }
-    
-    // Initialize wheel selection
-    function initializeWheelSelection() {
-        const wheelOptions = document.querySelectorAll('.wheel-option');
-        wheelOptions.forEach(option => {
-            // Remove any existing event listeners
-            if (option._wheelListener) {
-                option.removeEventListener('click', option._wheelListener);
-                option.removeEventListener('touchstart', option._wheelTouchListener);
-                delete option._wheelListener;
-                delete option._wheelTouchListener;
-            }
-            
-            // Create new listeners
-            const clickHandler = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const checkbox = this.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    checkbox.dispatchEvent(new Event('change'));
-                    
-                    // Update visual state
-                    const wheelBox = this.querySelector('.wheel-box');
-                    if (wheelBox) {
-                        if (checkbox.checked) {
-                            wheelBox.style.borderColor = 'var(--emergency-red)';
-                            wheelBox.style.backgroundColor = 'var(--emergency-light)';
-                            const icon = wheelBox.querySelector('i');
-                            if (icon) icon.style.color = 'var(--emergency-red)';
-                        } else {
-                            wheelBox.style.borderColor = '';
-                            wheelBox.style.backgroundColor = '';
-                            const icon = wheelBox.querySelector('i');
-                            if (icon) icon.style.color = '';
-                        }
-                    }
-                }
-            };
-            
-            const touchHandler = function(e) {
-                e.preventDefault();
-                clickHandler.call(this, e);
-            };
-            
-            // Store references for later removal
-            option._wheelListener = clickHandler;
-            option._wheelTouchListener = touchHandler;
-            
-            // Add event listeners
-            option.addEventListener('click', clickHandler);
-            option.addEventListener('touchstart', touchHandler, { passive: false });
-            
-            // Also update visual state based on current checkbox state
-            const checkbox = option.querySelector('input[type="checkbox"]');
-            const wheelBox = option.querySelector('.wheel-box');
-            if (checkbox && wheelBox) {
-                if (checkbox.checked) {
-                    wheelBox.style.borderColor = 'var(--emergency-red)';
-                    wheelBox.style.backgroundColor = 'var(--emergency-light)';
-                    const icon = wheelBox.querySelector('i');
-                    if (icon) icon.style.color = 'var(--emergency-red)';
-                }
-            }
-        });
-    }
-    
-    // Initialize condition checkbox labels for mobile
-    function initializeConditionCheckboxes() {
-        const checkboxGroups = document.querySelectorAll('.condition-checkboxes .checkbox-group');
-        checkboxGroups.forEach(group => {
-            const label = group.querySelector('label');
-            const checkbox = group.querySelector('input[type="checkbox"]');
-            
-            if (label && checkbox) {
-                // Make the entire label area clickable on mobile
-                label.style.cursor = 'pointer';
-                label.style.userSelect = 'none';
-                label.style.webkitTapHighlightColor = 'transparent';
-                
-                const clickHandler = function(e) {
-                    e.preventDefault();
-                    checkbox.checked = !checkbox.checked;
-                    checkbox.dispatchEvent(new Event('change'));
-                };
-                
-                // Remove existing listener if any
-                if (label._conditionListener) {
-                    label.removeEventListener('click', label._conditionListener);
-                    label.removeEventListener('touchstart', label._conditionTouchListener);
-                    delete label._conditionListener;
-                    delete label._conditionTouchListener;
-                }
-                
-                // Store references
-                label._conditionListener = clickHandler;
-                label._conditionTouchListener = function(e) {
-                    e.preventDefault();
-                    clickHandler.call(this, e);
-                };
-                
-                // Add listeners
-                label.addEventListener('click', clickHandler);
-                label.addEventListener('touchstart', label._conditionTouchListener, { passive: false });
-            }
-        });
-    }
-    
     // Public API
     return {
         init,
         validateForm,
         prepareFormData,
         saveServiceRecord,
-        generateRecordId,
-        initializeWheelSelection,
-        initializeConditionCheckboxes
+        generateRecordId
     };
 })();
 
