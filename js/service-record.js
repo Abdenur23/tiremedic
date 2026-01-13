@@ -26,6 +26,9 @@ const ServiceRecordModule = (function() {
         if (printBtn) {
             printBtn.addEventListener('click', handlePrint);
         }
+        
+        // Initialize wheel selection after form is ready
+        setTimeout(initializeWheelSelection, 100);
     }
     
     // Setup form submission with AWS integration
@@ -238,6 +241,58 @@ const ServiceRecordModule = (function() {
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
         });
+        
+        // Re-initialize wheel selection after reset
+        setTimeout(initializeWheelSelection, 100);
+    }
+    
+    // Initialize wheel selection
+    function initializeWheelSelection() {
+        const wheelOptions = document.querySelectorAll('.wheel-option');
+        wheelOptions.forEach(option => {
+            // Remove any existing event listeners by cloning
+            if (option.hasAttribute('data-listener-attached')) {
+                return; // Already has listener
+            }
+            
+            option.setAttribute('data-listener-attached', 'true');
+            
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    
+                    // Update visual state
+                    const wheelBox = this.querySelector('.wheel-box');
+                    if (wheelBox) {
+                        if (checkbox.checked) {
+                            wheelBox.style.borderColor = 'var(--emergency-red)';
+                            wheelBox.style.backgroundColor = 'var(--emergency-light)';
+                            const icon = wheelBox.querySelector('i');
+                            if (icon) icon.style.color = 'var(--emergency-red)';
+                        } else {
+                            wheelBox.style.borderColor = '';
+                            wheelBox.style.backgroundColor = '';
+                            const icon = wheelBox.querySelector('i');
+                            if (icon) icon.style.color = '';
+                        }
+                    }
+                }
+            });
+            
+            // Also update visual state based on current checkbox state
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            const wheelBox = option.querySelector('.wheel-box');
+            if (checkbox && wheelBox) {
+                if (checkbox.checked) {
+                    wheelBox.style.borderColor = 'var(--emergency-red)';
+                    wheelBox.style.backgroundColor = 'var(--emergency-light)';
+                    const icon = wheelBox.querySelector('i');
+                    if (icon) icon.style.color = 'var(--emergency-red)';
+                }
+            }
+        });
     }
     
     // Public API
@@ -246,7 +301,8 @@ const ServiceRecordModule = (function() {
         validateForm,
         prepareFormData,
         saveServiceRecord,
-        generateRecordId
+        generateRecordId,
+        initializeWheelSelection
     };
 })();
 
