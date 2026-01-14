@@ -1,86 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome — Coming Soon</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-                   Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-      background: linear-gradient(135deg, #f8f9fb, #eef2f7);
-      color: #1f2937;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 600px;
-      padding: 40px 30px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-
-    p {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      margin: 12px 0;
-      color: #374151;
-    }
-
-    .highlight {
-      margin-top: 24px;
-      padding: 16px;
-      background: #f3f4f6;
-      border-radius: 12px;
-      font-weight: 500;
-    }
-
-    .footer {
-      margin-top: 28px;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-
-    .emoji {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tire Medics SF - Emergency Mobile Tire Repair San Francisco</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <div class="emoji">👋</div>
-    <h1>Welcome — we're glad you're here</h1>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tire-pressure-warning"></i>
+                <span>TireMedics<span class="logo-sf">SF</span></span>
+            </a>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="/" class="active"><i class="fas fa-home"></i> Home</a></li>
+                <!-- <li><a href="/service-record.html"><i class="fas fa-clipboard-check"></i> Service Record</a></li> -->
+                <li><a href="/terms.html"><i class="fas fa-file-contract"></i> Terms</a></li>
+                <li><a href="/privacy.html"><i class="fas fa-shield-alt"></i> Privacy</a></li>
+                <li><a href="tel:+14153718955"><i class="fas fa-phone"></i> Call Now</a></li>
+            </ul>
+        </div>
+    </nav>
 
-    <p>
-      This site is currently <strong>under construction</strong>, and something
-      thoughtful is being put together behind the scenes.
-    </p>
+    <!-- Emergency Hero -->
+    <header class="emergency-hero">
+        <div class="container">
+            <div class="emergency-content">
+                <div class="emergency-badge">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>EMERGENCY TIRE SERVICE</span>
+                </div>
+                <h1>FLAT TIRE IN SAN FRANCISCO?</h1>
+                <h2>Mobile Tire Repair On-Site Now</h2>
+                <p class="emergency-subtitle">We come to you. Fast response. No appointment needed.</p>
+                
+                <div class="emergency-cta">
+                    <a href="tel:+14153718955" class="btn-emergency">
+                        <div class="emergency-btn-content">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <span class="call-label">CALL FOR IMMEDIATE RESPONSE</span>
+                                <span class="call-number">(415) 371-8955</span>
+                            </div>
+                        </div>
+                    </a>
+                    <p class="response-time">
+                        <i class="fas fa-bolt"></i> Average Response: 45-90 minutes
+                    </p>
+                </div>
 
-    <p>
-      We believe in building things carefully, with intention and quality.
-      That takes a little time — and it’s time well spent.
-    </p>
+                <div class="emergency-features">
+                    <div class="emergency-feature">
+                        <i class="fas fa-bicycle"></i>
+                        <span>eBike Mobile - We navigate traffic</span>
+                    </div>
+                    <div class="emergency-feature">
+                        <i class="fas fa-clock"></i>
+                        <span>7 Days/Week - 8AM to 8PM</span>
+                    </div>
+                    <div class="emergency-feature">
+                        <i class="fas fa-tools"></i>
+                        <span>On-Site Repair or Tire Swap</span>
+                    </div>
+                </div>
+            </div>
+            <div class="emergency-image">
+                <div class="image-placeholder">
+                    <img
+                        src="tiremedicsf.com-tire-service.jpg"
+                        alt="Emergency Mobile Tire Service"
+                        style="max-width:100%; height:auto; display:block;"
+                    >
+                    <i class="fas fa-tire-pressure-warning"></i>
+                </div>
+            </div>
 
-    <div class="highlight">
-      🚧 We’re working on it right now. Please check back soon.
-    </div>
+        </div>
+    </header>
 
-    <div class="footer">
-      Thank you for stopping by and for your patience.
-    </div>
-  </div>
+    <!-- How It Works - Simplified -->
+    <section class="section quick-process">
+        <div class="container">
+            <h2>Quick & Simple Process</h2>
+            <div class="process-steps">
+                <div class="process-step">
+                    <div href="tel:+14153718955" class="step-icon emergency">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>1. Call Us</h3>
+                    <p>Call for immediate dispatch. We'll get your location and situation.</p>
+                </div>
+                <div class="process-step">
+                    <div class="step-icon">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                    <h3>2. We Ride To You</h3>
+                    <p>Technician arrives via eBike with all necessary tools.</p>
+                </div>
+                <div class="process-step">
+                    <div class="step-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>3. On-Site Inspection</h3>
+                    <p>We inspect and assess if repair is possible (must be present).</p>
+                </div>
+                <div class="process-step">
+                    <div class="step-icon">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                    <h3>4. Fix or Swap</h3>
+                    <p>We repair the tire or swap with your spare. Service fee applies.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Important Emergency Notes -->
+    <section class="section emergency-notes">
+        <div class="container">
+            <div class="emergency-card">
+                <h3><i class="fas fa-exclamation-circle"></i> IMPORTANT NOTES</h3>
+                <div class="emergency-note-items">
+                    <div class="note-item">
+                        <i class="fas fa-user-check"></i>
+                        <div>
+                            <strong>Must Be Present:</strong> You or representative must supervise service
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <i class="fas fa-video"></i>
+                        <div>
+                            <strong>Body Cameras:</strong> Technicians wear cameras for safety
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <i class="fas fa-ban"></i>
+                        <div>
+                            <strong>No Tire Warranty:</strong> We warranty our work only, not the tire
+                        </div>
+                    </div>
+                    <div class="note-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div>
+                            <strong>Service Fee:</strong> Applies once technician performs on-site inspection
+                        </div>
+                    </div>
+                </div>
+                <a href="/terms.html" class="btn-terms-link">
+                    <i class="fas fa-external-link-alt"></i> View Full Terms of Service
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Area -->
+    <section class="section service-area">
+        <div class="container">
+            <h2>Service Area</h2>
+            <p class="area-subtitle">Serving San Francisco and immediate surrounding areas</p>
+            <div class="area-features">
+                <div class="area-feature">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h4>San Francisco</h4>
+                    <p>All neighborhoods accessible by eBike</p>
+                </div>
+                <div class="area-feature">
+                    <i class="fas fa-bridge"></i>
+                    <h4>Bridge Areas</h4>
+                    <p>Emergency service near major bridges</p>
+                </div>
+                <div class="area-feature">
+                    <i class="fas fa-city"></i>
+                    <h4>Downtown & Hills</h4>
+                    <p>Specialized access for challenging areas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="section final-cta">
+        <div class="container">
+            <div class="cta-card">
+                <h2>Need Help Now?</h2>
+                <p>Don't wait for a tow truck. We can often fix it on the spot.</p>
+                <a href="tel:+14153718955" class="btn-emergency-large">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <span class="call-label-large">CALL FOR EMERGENCY SERVICE</span>
+                        <span class="call-number-large">(415) 371-8955</span>
+                    </div>
+                </a>
+                <p class="hours-note">
+                    <i class="fas fa-clock"></i> Available 7 days a week, 8AM - 8PM
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <i class="fas fa-tire-pressure-warning"></i>
+                        <span>TireMedics<span class="logo-sf">SF</span></span>
+                    </a>
+                    <p>Golden Gate Blooms LLC</p>
+                    <p>Emergency Mobile Tire Repair</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/service-record.html">Service Record</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Emergency Contact</h4>
+                    <p><i class="fas fa-phone"></i> (415) 371-8955</p>
+                    <p><i class="fas fa-globe"></i> tiremedicsf.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> San Francisco, CA</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Golden Gate Blooms LLC. All rights reserved.</p>
+                <p>Last Updated: January 9, 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
