@@ -3,6 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Receipt Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        :root { --primary: #3b82f6; --accent: #60a5fa; --bg: #000000; --panel: #111827; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* High-Tech Viewfinder */
+        #viewport { position: relative; flex: 1; background: #000; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Corner Brackets */
+        .corner { position: absolute; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); transition: all 0.2s; }
+        .top-left { top: 15%; left: 10%; border-right: 0; border-bottom: 0; }
+        .top-right { top: 15%; right: 10%; border-left: 0; border-bottom: 0; }
+        .bot-left { bottom: 15%; left: 10%; border-right: 0; border-top: 0; }
+        .bot-right { bottom: 15%; right: 10%; border-left: 0; border-top: 0; }
+        .active .corner { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+        /* Scanning UI */
+        #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        #status-card { position: absolute; bottom: 30px; background: var(--panel); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+        
+        .indicator { width: 12px; height: 12px; border-radius: 50%; background: #374151; transition: background 0.3s; }
+        .indicator.on { background: #10b981; box-shadow: 0 0 10px #10b981; }
+
+        /* Progress Bar */
+        #confidence-bar { position: absolute; top: 0; left: 0; height: 4px; width: 0%; background: var(--accent); transition: width 0.1s linear; }
+
+        /* Results */
+        #results-view { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: none; padding: 20px; flex-direction: column; }
+        .output { flex: 1; background: #0a0a0a; border: 1px solid #262626; border-radius: 8px; padding: 15px; font-family: monospace; overflow-y: auto; color: #d4d4d4; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { padding: 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <video id="video" autoplay playsinline></video>
+    <div id="confidence-bar"></div>
+    <div id="overlay" class="">
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bot-left"></div>
+        <div class="corner bot-right"></div>
+        
+        <div id="status-card">
+            <div id="led" class="indicator"></div>
+            <span id="msg">Point at Receipt Items</span>
+        </div>
+    </div>
+</div>
+
+<div id="results-view">
+    <h2 style="margin-top:0">Scan Complete</h2>
+    <div id="ocr-out" class="output">Extracted list will appear here...</div>
+    <div class="btn-row">
+        <button style="background:#2563eb; color:white;" onclick="copyOut()">Copy</button>
+        <button style="background:#262626; color:white;" onclick="location.reload()">Reset</button>
+    </div>
+</div>
+
+<canvas id="analysis" style="display:none;"></canvas>
+
+<script>
+    const video = document.getElementById('video');
+    const msg = document.getElementById('msg');
+    const led = document.getElementById('led');
+    const bar = document.getElementById('confidence-bar');
+    const overlay = document.getElementById('overlay');
+    const canvas = document.getElementById('analysis');
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+
+    let stream, track;
+    let frameData = [];
+    let isCaptured = false;
+
+    async function setup() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: 1280, height: 720, frameRate: { ideal: 30 } }
+            });
+            video.srcObject = stream;
+            track = stream.getVideoTracks()[0];
+            process();
+        } catch (e) { msg.innerText = "Camera Denied"; }
+    }
+
+    function process() {
+        if (isCaptured) return;
+
+        canvas.width = 160; 
+        canvas.height = 120;
+        ctx.drawImage(video, 0, 0, 160, 120);
+        
+        const pixels = ctx.getImageData(0, 0, 160, 120).data;
+        
+        // 1. Line Detection (Industry standard for receipts)
+        // We look for high-contrast horizontal patterns
+        let rowCount = 0;
+        for (let y = 10; y < 110; y += 4) {
+            let variations = 0;
+            for (let x = 20; x < 140; x += 4) {
+                const i = (y * 160 + x) * 4;
+                const brightness = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+                const nextB = (pixels[i+16] + pixels[i+17] + pixels[i+18]) / 3;
+                if (Math.abs(brightness - nextB) > 35) variations++;
+            }
+            if (variations > 4) rowCount++;
+        }
+
+        // 2. Temporal Smoothing (Reliability logic)
+        // Only trigger if we consistently see the same number of rows for 15 frames
+        frameData.push(rowCount);
+        if (frameData.length > 15) frameData.shift();
+        
+        const averageRows = frameData.reduce((a,b) => a+b, 0) / frameData.length;
+        const stability = 1 - (Math.abs(rowCount - averageRows) / 10);
+        const progress = (rowCount / 12) * stability; // Aiming for 12+ text rows
+
+        // Update UI
+        const finalConfidence = Math.min(100, progress * 100);
+        bar.style.width = finalConfidence + "%";
+
+        if (rowCount > 5) {
+            overlay.className = "active";
+            led.className = "indicator on";
+            msg.innerText = finalConfidence > 80 ? "STABILIZING..." : "RECEIPT DETECTED";
+            
+            // Auto-Flash for low light
+            toggleFlash(pixels);
+
+            // 3. The Trigger: 90% confidence for ~half a second
+            if (finalConfidence > 90) {
+                capture();
+                return;
+            }
+        } else {
+            overlay.className = "";
+            led.className = "indicator";
+            msg.innerText = "Align Receipt Items";
+        }
+
+        requestAnimationFrame(process);
+    }
+
+    function toggleFlash(d) {
+        let b = 0;
+        for(let i=0; i<d.length; i+=40) b += (d[i]+d[i+1]+d[i+2])/3;
+        b = b / (d.length/40);
+        if (track && track.getCapabilities().torch) {
+            track.applyConstraints({advanced: [{torch: b < 45}]});
+        }
+    }
+
+    function capture() {
+        isCaptured = true;
+        msg.innerText = "CAPTURING...";
+        
+        setTimeout(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const blob = canvas.toDataURL('image/jpeg', 0.95);
+            
+            stream.getTracks().forEach(t => t.stop());
+            document.getElementById('results-view').style.display = 'flex';
+            runOCR(blob);
+        }, 300); // Small delay to let focus settle
+    }
+
+    async function runOCR(img) {
+        const worker = await Tesseract.createWorker('eng');
+        const { data: { text } } = await worker.recognize(img);
+        await worker.terminate();
+
+        const lines = text.split('\n')
+            .filter(l => l.trim().length > 4)
+            .map((l, i) => `<span style="color:#555">${(i+1).toString().padStart(2,'0')}</span>  ${l.trim()}`)
+            .join('\n');
+            
+        document.getElementById('ocr-out').innerHTML = lines || "No text detected. Ensure good lighting.";
+    }
+
+    function copyOut() {
+        const t = document.getElementById('ocr-out').innerText.replace(/^\d+\s+/gm, '');
+        navigator.clipboard.writeText(t);
+        alert("List copied!");
+    }
+
+    window.onload = setup;
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartScan AI | 90% Clarity Lock</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
