@@ -2,357 +2,250 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Receipt AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Receipt AI | List Detector</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #a855f7;
-            --bg: #0f172a;
-        }
-
+        :root { --primary: #6366f1; --secondary: #a855f7; --bg: #0f172a; --success: #22c55e; }
         body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
+            margin: 0; font-family: sans-serif; background: var(--bg); color: white;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
-
-        #app-container {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            box-sizing: border-box;
+        #app { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; }
+        
+        /* Viewfinder */
+        #viewfinder {
+            position: relative; width: 100%; aspect-ratio: 9/16; 
+            background: #000; border-radius: 24px; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
         }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Camera Viewfinder */
-        #viewfinder-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 3/4;
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Overlay Guide */
         .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
-
-        .receipt-guide {
-            width: 70%;
-            height: 80%;
-            border: 2px dashed rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-            position: relative;
-            transition: border-color 0.3s;
+        #guide-box {
+            width: 80%; height: 60%; border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px; transition: all 0.3s ease; position: relative;
         }
-
-        .receipt-guide.active {
-            border-color: #22c55e;
-            box-shadow: 0 0 20px #22c55e;
+        #guide-box.active { border: 3px solid var(--success); box-shadow: 0 0 30px var(--success); }
+        
+        /* Scanning Animation Line */
+        .scan-line {
+            position: absolute; width: 100%; height: 2px; background: var(--success);
+            top: 0; left: 0; animation: scan 2s linear infinite; opacity: 0;
         }
+        #guide-box.active .scan-line { opacity: 1; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-        /* Status Bar */
-        #status-indicator {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            padding: 10px 20px;
-            border-radius: 30px;
-            margin-top: -25px;
-            z-index: 10;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border: 1px solid rgba(255,255,255,0.1);
+        /* UI Elements */
+        #status-pill {
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            padding: 8px 16px; border-radius: 20px; margin-top: -40px;
+            z-index: 10; font-size: 14px; border: 1px solid rgba(255,255,255,0.2);
         }
-
-        /* Results UI */
-        #results-card {
-            display: none;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+        #results-area { display: none; width: 100%; background: #1e293b; border-radius: 20px; padding: 20px; margin-top: 20px; }
+        .receipt-data { 
+            background: #000; color: #adff2f; padding: 15px; border-radius: 10px;
+            font-family: monospace; font-size: 13px; line-height: 1.6;
+            max-height: 350px; overflow-y: auto; white-space: pre-wrap;
         }
-
-        .ocr-text {
-            background: #000;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-
         .btn {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            transition: opacity 0.2s;
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-weight: bold; cursor: pointer; margin-top: 10px;
         }
-
-        .btn:active { opacity: 0.8; }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #334155;
-            border-radius: 3px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-
-        #progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        .hidden { display: none !important; }
+        .btn-primary { background: linear-gradient(to right, var(--primary), var(--secondary)); color: white; }
+        .loader { width: 100%; height: 4px; background: #334155; border-radius: 2px; margin: 10px 0; overflow: hidden; }
+        #progress { width: 0%; height: 100%; background: var(--success); transition: width 0.2s; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="app-container">
-    <header>
-        <h1>SmartScan AI</h1>
-        <p style="opacity: 0.7;">Align receipt within frame</p>
-    </header>
+<div id="app">
+    <div style="text-align:center; margin-bottom:15px;">
+        <h2 style="margin:0">Receipt Lens</h2>
+        <p style="font-size:12px; opacity:0.6">Finding product list...</p>
+    </div>
 
-    <div id="viewfinder-container">
+    <div id="viewfinder">
         <video id="video" autoplay playsinline></video>
         <div class="overlay">
-            <div id="guide" class="receipt-guide"></div>
+            <div id="guide-box">
+                <div class="scan-line"></div>
+            </div>
         </div>
     </div>
 
-    <div id="status-indicator">Initializing camera...</div>
-
-    <div id="processing-ui" class="hidden">
-        <p style="text-align: center;">Processing OCR...</p>
-        <div class="progress-bar"><div id="progress-fill"></div></div>
+    <div style="display:flex; justify-content:center;">
+        <div id="status-pill">Waiting for camera...</div>
     </div>
 
-    <div id="results-card">
-        <h3>Extracted Content</h3>
-        <div id="confidence-score" style="font-size: 0.8rem; margin-bottom: 5px;"></div>
-        <div class="ocr-text" id="ocr-output"></div>
-        <button class="btn" onclick="copyText()">Copy to Clipboard</button>
-        <button class="btn" style="background: #334155;" onclick="resetApp()">Scan Another</button>
+    <div id="results-area">
+        <div id="processing-msg">
+            <p style="text-align:center">Reading List...</p>
+            <div class="loader"><div id="progress"></div></div>
+        </div>
+        <div id="output-header" class="hidden" style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span>Found Items:</span>
+            <span id="conf" style="color:var(--success)"></span>
+        </div>
+        <div id="ocr-result" class="receipt-data hidden"></div>
+        <button class="btn btn-primary hidden" id="copy-btn" onclick="copyText()">Copy Text</button>
+        <button class="btn" style="background:#475569; color:white;" onclick="location.reload()">Reset Camera</button>
     </div>
 </div>
 
-<canvas id="analysis-canvas" style="display:none;"></canvas>
+<canvas id="calc-canvas" style="display:none;"></canvas>
 
 <script>
     const video = document.getElementById('video');
-    const guide = document.getElementById('guide');
-    const status = document.getElementById('status-indicator');
-    const resultsCard = document.getElementById('results-card');
-    const ocrOutput = document.getElementById('ocr-output');
-    const analysisCanvas = document.getElementById('analysis-canvas');
-    const progressFill = document.getElementById('progress-fill');
-    
-    let stream = null;
-    let track = null;
-    let isAnalyzing = true;
-    let stabilityCounter = 0;
-    const STABILITY_THRESHOLD = 15; // Frames of high quality needed
+    const statusPill = document.getElementById('status-pill');
+    const guide = document.getElementById('guide-box');
+    const resultsArea = document.getElementById('results-area');
+    const canvas = document.getElementById('calc-canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-    // 1. Initialize Camera
-    async function initCamera() {
+    let stream = null;
+    let isCapturing = false;
+    let listDetectionFrames = 0;
+
+    async function startCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
+                video: { facingMode: 'environment', width: 1280, height: 720 }
             });
             video.srcObject = stream;
-            track = stream.getVideoTracks()[0];
-            
-            status.innerText = "Analyzing environment...";
-            requestAnimationFrame(analyzeFrame);
+            video.onloadedmetadata = () => {
+                statusPill.innerText = "Align Item List...";
+                requestAnimationFrame(detectList);
+            };
         } catch (err) {
-            status.innerText = "Camera Error: Please grant permissions.";
-            console.error(err);
+            statusPill.innerText = "Camera Access Denied";
         }
     }
 
-    // 2. Smart Detection Logic
-    async function analyzeFrame() {
-        if (!isAnalyzing) return;
+    function detectList() {
+        if (isCapturing) return;
 
-        const ctx = analysisCanvas.getContext('2d');
-        analysisCanvas.width = video.videoWidth / 4; // Downscale for speed
-        analysisCanvas.height = video.videoHeight / 4;
-        ctx.drawImage(video, 0, 0, analysisCanvas.width, analysisCanvas.height);
-
-        const imageData = ctx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+        // Process a smaller chunk of the video for performance
+        canvas.width = 300;
+        canvas.height = 400;
+        ctx.drawImage(video, 0, 0, 300, 400);
         
-        // A. Simple Brightness & Auto-Flash logic
-        const brightness = getBrightness(imageData);
-        handleFlash(brightness);
-
-        // B. Sharpness Analysis (Laplacian Variance approximation)
-        const sharpness = calculateSharpness(imageData);
+        const imgData = ctx.getImageData(50, 100, 200, 200); // Sample the center
+        const data = imgData.data;
         
-        // C. Logic Gate
-        if (sharpness > 25 && brightness > 40 && brightness < 220) {
-            stabilityCounter++;
+        let textLineEstimator = 0;
+        let brightnessSum = 0;
+
+        // Smart List Detection: Look for rapid dark-to-light transitions (text lines)
+        for (let y = 0; y < imgData.height; y += 4) {
+            let transitions = 0;
+            for (let x = 0; x < imgData.width * 4; x += 8) {
+                const idx = (y * imgData.width * 4) + x;
+                const lum = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                brightnessSum += lum;
+                
+                // Count high-contrast jumps (likely characters)
+                if (Math.abs(lum - (data[idx+4] || lum)) > 40) {
+                    transitions++;
+                }
+            }
+            if (transitions > 5) textLineEstimator++; // This row looks like it has text
+        }
+
+        const avgBrightness = brightnessSum / (imgData.width * imgData.height);
+        handleAutoTorch(avgBrightness);
+
+        // If we see at least 6 distinct "rows" of text-like patterns, increase stability
+        if (textLineEstimator >= 6) {
+            listDetectionFrames++;
             guide.classList.add('active');
-            status.innerText = "Hold Steady... Clear Scan Detected!";
+            statusPill.innerText = `List Detected! Hold Still... ${Math.min(100, listDetectionFrames * 10)}%`;
             
-            if (stabilityCounter >= STABILITY_THRESHOLD) {
-                captureImage();
+            if (listDetectionFrames > 12) {
+                doCapture();
                 return;
             }
         } else {
-            stabilityCounter = 0;
+            listDetectionFrames = Math.max(0, listDetectionFrames - 1);
             guide.classList.remove('active');
-            status.innerText = sharpness < 25 ? "Focusing..." : "Adjusting Lighting...";
+            statusPill.innerText = "Searching for Item List...";
         }
 
-        requestAnimationFrame(analyzeFrame);
+        requestAnimationFrame(detectList);
     }
 
-    function getBrightness(imageData) {
-        let colorSum = 0;
-        const data = imageData.data;
-        for(let i = 0; i < data.length; i += 4) {
-            colorSum += (data[i] + data[i+1] + data[i+2]) / 3;
+    async function handleAutoTorch(brightness) {
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities();
+        if (caps.torch) {
+            try {
+                // Flash on if very dark, off if bright
+                if (brightness < 40) await track.applyConstraints({advanced: [{torch: true}]});
+                if (brightness > 150) await track.applyConstraints({advanced: [{torch: false}]});
+            } catch(e) {}
         }
-        return colorSum / (imageData.width * imageData.height);
     }
 
-    function calculateSharpness(imageData) {
-        // Simple edge intensity check as proxy for sharpness
-        const data = imageData.data;
-        const width = imageData.width;
-        let score = 0;
-        for (let i = 0; i < data.length - 4; i += 4) {
-            const diff = Math.abs(data[i] - data[i+4]);
-            score += diff;
-        }
-        return score / (data.length / 4);
-    }
-
-    async function handleFlash(brightness) {
-        if (!track || !track.getCapabilities().torch) return;
+    async function doCapture() {
+        isCapturing = true;
+        statusPill.innerText = "Capturing High-Res...";
         
-        try {
-            if (brightness < 50) {
-                await track.applyConstraints({ advanced: [{ torch: true }] });
-            } else if (brightness > 180) {
-                await track.applyConstraints({ advanced: [{ torch: false }] });
-            }
-        } catch (e) { /* Torch not supported on all devices */ }
-    }
-
-    // 3. Capture and Stop Camera
-    async function captureImage() {
-        isAnalyzing = false;
-        status.innerText = "Image Captured!";
-        
-        // Capture high-res frame
-        analysisCanvas.width = video.videoWidth;
-        analysisCanvas.height = video.videoHeight;
-        analysisCanvas.getContext('2d').drawImage(video, 0, 0);
-        const dataUrl = analysisCanvas.toDataURL('image/jpeg', 0.9);
+        // Final high-quality grab
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const blob = canvas.toDataURL('image/jpeg', 0.95);
 
         // Stop Camera
-        track.stop();
-        video.classList.add('hidden');
-        document.getElementById('guide').classList.add('hidden');
-        document.getElementById('processing-ui').classList.remove('hidden');
+        stream.getTracks().forEach(t => t.stop());
+        video.style.display = 'none';
+        document.querySelector('.overlay').style.display = 'none';
+        resultsArea.style.display = 'block';
 
-        processOCR(dataUrl);
+        runOCR(blob);
     }
 
-    // 4. OCR Processing
-    async function processOCR(image) {
-        try {
-            const worker = await Tesseract.createWorker('eng', 1, {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        progressFill.style.width = `${m.progress * 100}%`;
-                    }
+    async function runOCR(image) {
+        const worker = await Tesseract.createWorker('eng', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    document.getElementById('progress').style.width = (m.progress * 100) + '%';
                 }
-            });
+            }
+        });
 
-            const { data: { text, confidence } } = await worker.recognize(image);
-            await worker.terminate();
+        const { data: { text, confidence } } = await worker.recognize(image);
+        await worker.terminate();
 
-            displayResults(text, confidence);
-        } catch (err) {
-            status.innerText = "OCR Failed. Please try again.";
-            console.error(err);
-        }
-    }
-
-    function displayResults(text, confidence) {
-        document.getElementById('processing-ui').classList.add('hidden');
-        resultsCard.style.display = 'block';
-        status.innerText = "Scan Complete";
+        // Clean up UI
+        document.getElementById('processing-msg').classList.add('hidden');
+        document.getElementById('output-header').classList.remove('hidden');
+        document.getElementById('copy-btn').classList.remove('hidden');
         
-        const lines = text.split('\n').map((line, i) => `${i+1} | ${line}`).join('\n');
-        ocrOutput.innerText = lines || "No text detected.";
-        document.getElementById('confidence-score').innerText = `AI Confidence: ${confidence}%`;
+        const resultEl = document.getElementById('ocr-result');
+        resultEl.classList.remove('hidden');
+        document.getElementById('conf').innerText = `${confidence}% Confidence`;
+        
+        // Format with line numbers
+        resultEl.innerText = text.split('\n')
+            .filter(line => line.trim().length > 2)
+            .map((line, i) => `${(i+1).toString().padStart(2, '0')} | ${line}`)
+            .join('\n');
     }
 
-    // Utils
     function copyText() {
-        const text = ocrOutput.innerText.replace(/^\d+ \| /gm, '');
-        navigator.clipboard.writeText(text);
-        alert("Text copied!");
+        const raw = document.getElementById('ocr-result').innerText.replace(/^\d+ \| /gm, '');
+        navigator.clipboard.writeText(raw);
+        alert("List copied to clipboard!");
     }
 
-    function resetApp() {
-        location.reload(); // Simplest way to reset all states and re-init camera
-    }
-
-    window.onload = initCamera;
+    window.onload = startCamera;
 </script>
-
 </body>
 </html>
